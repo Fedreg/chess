@@ -1,0 +1,11 @@
+{:deps     {:org.clojure/clojure                             {:mvn/version "1.10.0"}}
+
+ :aliases  {:nrepl {:extra-deps {nrepl/nrepl                 {:mvn/version "0.4.5"}}}
+
+            :cider {:extra-deps {cider/cider-nrepl           {:mvn/version "0.18.0"}}
+                    :main-opts ["-m" "nrepl.cmdline" "--middleware" "[cider.nrepl/cider-middleware]"]}
+
+            :rebl {:extra-deps {org.clojure/core.async       {:mvn/version "0.4.490"}
+                                org.clojure/clojure          {:mvn/version "1.10.0"}
+                                nrepl-rebl                   {:mvn/version "0.1.1"}
+                                com.cognitect/rebl           {:local/root "../../REBL-0.9.109/REBL-0.9.109.jar"}}}}}

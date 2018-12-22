@@ -21,6 +21,13 @@
     :K king
     nil))
 
+(defn colorize
+  "Applies white or black color to piece on game start"
+  [k v]
+  (if (= "" v) "" (assoc v :color (if (#{:1 :2} k)
+                                      :white
+                                      :black))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Board
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -41,12 +48,32 @@
 
 (def board (atom blank-board))
 
+(defn ->board
+  "Board manipulations"
+  [action]
+  (let [f (case action
+            :display  #(or (:name %2) "")
+            :colorize #(colorize %1 %2)
+            :info     (fn [_ v] v))]
+    (reduce-kv
+     (fn [m k v]
+       (assoc m k (reduce-kv
+                   (fn [-m -k -v] (assoc -m -k (f k -v)))
+                   {}
+                   v)))
+     {}
+     @board)))
+
 (defn new-game []
   (reset! board blank-board)
-  (swap! board assoc-in [:1] {:a :r :b :b :c :k :d :Q :e :K :f :k :g :b :h :r})
-  (swap! board assoc-in [:2] {:a :p :b :p :c :p :d :p :e :p :f :p :g :p :h :p})
-  (swap! board assoc-in [:7] {:a :p :b :p :c :p :d :p :e :p :f :p :g :p :h :p})
-  (swap! board assoc-in [:8] {:a :r :b :b :c :k :d :Q :e :K :f :k :g :b :h :r}))
+  (swap! board assoc-in [:1] {:a rook :b bishop :c knight :d queen :e king :f knight :g bishop :h rook})
+  (swap! board assoc-in [:2] {:a pawn :b pawn :c pawn :d pawn :e pawn :f pawn :g pawn :h pawn })
+  (swap! board assoc-in [:7] {:a pawn :b pawn :c pawn :d pawn :e pawn :f pawn :g pawn :h pawn })
+  (swap! board assoc-in [:8] {:a rook :b bishop :c knight :d queen :e king :f knight :g bishop :h rook})
+  (reset! board (->board :colorize))
+  (->board :display))
+
+(new-game)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Moves
@@ -109,14 +136,19 @@
                         (recur (rank (inc (.indexOf rank x)))
                                (file (inc (.indexOf file y)))))))
         block (cond
-                (= sx ex) (x-loop sx)
-                (= sy ey) (y-loop sy)
-                :else     (x-y-loop sx sy))]
+                (el? [sx sy] [ex ey]) nil
+                (= sx ex)             (x-loop sx)
+                (= sy ey)             (y-loop sy)
+                :else                 (x-y-loop sx sy))]
     block))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Main Move Func
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; sx, sy = start x, y;  ex, ey = end x, y
 (defn move [[sx sy] [ex ey]]
-  (let [piece   (name->piece (get-in @board [sx sy]))
+  (let [piece   (get-in @board [sx sy])
         dir     (:direction piece)
         max     (:max       piece)
         max?    (and max
@@ -128,34 +160,42 @@
                   :el       (and max? (el?       [sx sy] [ex ey]))
                   :multi    (and max? (multi?    [sx sy] [ex ey]))
                   false)
-        free?   (and (not= :k (:name piece))
+        free?   (and (= "" (get-in @board [ex ey]))
                      (not (blocked? [sx sy] [ex ey])))]
     (if (and valid? free?)
       (do
-        (swap! board assoc-in [ex ey] (:name piece))
+        (swap! board assoc-in [ex ey] piece)
         (swap! board assoc-in [sx sy] "")
-        {:piece (:name piece) :from [sx sy] :to [ex ey]})
+        [(->board :display)
+         "------------------------------------"
+        {:piece (:name piece) :from [sx sy] :to [ex ey]}])
       :illegal)))
 
 
 (comment
 
+  ;; Start a new game
   (new-game)
 
-  @board
+  ;; the board at current state
+  (->board :display)
+  (->board :info)
 
+  ;; Ignore these...
+  @board
   (straight? [:1 :a] [:1 :c])
   (diagonal? [:3 :a] [:1 :c])
   (el?       [:2 :c] [:1 :a])
   (multi?    [:2 :c] [:7 :b])
-  (blocked?  [:2 :a] [:3 :a])
+  (blocked?  [:1 :c] [:2 :a])
 
-  (move      [:1 :a] [:2 :a])
+  ;; All you need is this to move the pawns
+  (move      [:2 :a] [:4 :a])
 
+  ;; TODO  1. Colors (white v black) DONE
+  ;;       2. Killing
+  ;;       3. Points
+  ;;       4. State history (undo)
+  ;;       5. AI!!!
   :end-comment)
-(defn salty [n]
-  (loop [x n]
-    (when (< 0 x)
-      (println "x" x)
-      (recur (dec x)))))
 
