@@ -87,6 +87,7 @@
 (defn move [[sx sy] [ex ey] state]
   (let [board   (:board @state)
         piece   (get-in board [sx sy])
+        e-piece (get-in board [ex ey])
         dir     (:direction piece)
         max     (:max       piece)
         max?    (and max
@@ -98,19 +99,20 @@
                   :el       (and max? (el?       [sx sy] [ex ey]))
                   :multi    (and max? (multi?    [sx sy] [ex ey]))
                   false)
-        free?   (and (= "" (get-in board [ex ey]))
+        free?   (and (or (= "" e-piece)
+                         (if (= :white (:color piece))
+                           (= :black (:color e-piece))
+                           (= :white (:color e-piece))))
                      (not (blocked? [sx sy] [ex ey] board)))]
     (if (and valid? free?)
       (if (turn? (:round @state) piece)
-        (do
-          (s/update-move!  [sx sy] [ex ey] piece)
-          {:piece (:name piece) :from [sx sy] :to [ex ey]})
+        (s/update-move!  [sx sy] [ex ey] piece)
         :other-player)
       :illegal)))
 
 (comment
   ;; State
-  @s/state
+  (dissoc @s/state :board :history)
 
   ;; Start a new game
   (s/new-game!)
@@ -126,8 +128,12 @@
   (diagonal? [:3 :a] [:1 :c])
   (el?       [:2 :c] [:1 :a])
   (multi?    [:2 :c] [:7 :b])
-  (blocked?  [:1 :c] [:2 :a])
+  (blocked?  [:3 :e] [:5 :d] (:board @s/state))
 
   ;; All you need is this to move the pawns
-  (move      [:2 :c] [:4 :c] s/state)
+  (move      [:3 :e] [:5 :d] s/state)
+  
+  (move      [:7 :a] [:6 :a] s/state)
+
+
   :end-comment)
