@@ -1,6 +1,4 @@
-(ns chess-test.pieces
-  (:require
-   [chess-test.state :as state]))
+(ns chess-test.pieces)
 
 (def pawn   {:max 2 :direction :straight :attack :diagonal :name :p :value 1})
 (def bishop {:max 8 :direction :diagonal :attack :diagonal :name :b :value 3})
