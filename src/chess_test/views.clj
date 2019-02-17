@@ -73,21 +73,25 @@
     [:button {:onclick "sendMove();"} "move"]])
 
 (defn board [data]
+  [:div board-style
+   [:div square-row-style (get-pieces 1 data)]
+   [:div square-row-style (get-pieces 2 data)]
+   [:div square-row-style (get-pieces 3 data)]
+   [:div square-row-style (get-pieces 4 data)]
+   [:div square-row-style (get-pieces 5 data)]
+   [:div square-row-style (get-pieces 6 data)]
+   [:div square-row-style (get-pieces 7 data)]
+   [:div square-row-style (get-pieces 8 data)]
+   move-button])
+
+(defn page [data]
   (page/html5
    [:head
     (page/include-js "js/chess-scripts.js")]
    [:body
     [:div#body
-     [:div board-style
-      [:div square-row-style (get-pieces 1 data)]
-      [:div square-row-style (get-pieces 2 data)]
-      [:div square-row-style (get-pieces 3 data)]
-      [:div square-row-style (get-pieces 4 data)]
-      [:div square-row-style (get-pieces 5 data)]
-      [:div square-row-style (get-pieces 6 data)]
-      [:div square-row-style (get-pieces 7 data)]
-      [:div square-row-style (get-pieces 8 data)]
-      move-button]]]))
+     (board data)]]))
+
 
 (comment
   (def samp-board

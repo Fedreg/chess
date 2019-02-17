@@ -11,7 +11,8 @@
    [chess-test.moves       :as m]
    [chess-test.board       :as b]
    [chess-test.views       :as v]
-   [chess-test.state       :as s]))
+   [chess-test.state       :as s]
+   [hiccup.page :as page]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Default Responses
@@ -27,13 +28,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn start-game [req]
-  (v/board (s/new-game!)))
-
-(start-game nil)
+  (v/page (s/new-game!)))
 
 (defn board [req]
   (html [:div (b/->board (:board @s/state) :display)]))
-
 
 (defn move [xy]
   (let [sx (keyword (subs xy 0 1))
@@ -42,7 +40,9 @@
         ey (keyword (subs xy 3 4))
         res (m/move [sx sy] [ex ey] s/state)]
     (println "MOVES:" sx sy ex ey)
-    (v/board res)))
+    (if (not= :illegal res)
+      (page/html5 (v/board res))
+      "illegal")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Routing

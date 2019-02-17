@@ -1,7 +1,13 @@
 function loadPage() {
     let resText = this.responseText;
     let body = document.getElementById("body");
-    body.innerHTML = resText;
+    console.log("RES", resText);
+    if (resText != "illegal") {
+        body.innerHTML = resText;
+    }
+    else {
+        console.log("ILLEGAL MOVE");
+    }
 }
 
 const get = (url) => {
