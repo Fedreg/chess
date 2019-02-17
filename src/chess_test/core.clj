@@ -27,22 +27,22 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn start-game [req]
-  (s/new-game!)
-  (html (v/board nil)))
-  ;; #_(html [:h1 "New Game Started!"]))
+  (v/board (s/new-game!)))
 
 (start-game nil)
 
 (defn board [req]
   (html [:div (b/->board (:board @s/state) :display)]))
 
-(defn move [sx sy ex ey]
-  (let [-sx (keyword sx)
-        -sy (keyword sy)
-        -ex (keyword ex)
-        -ey (keyword ey)
-        res (m/move [-sx -sy] [-ex -ey] s/state)]
-    (html [:div res])))
+
+(defn move [xy]
+  (let [sx (keyword (subs xy 0 1))
+        sy (keyword (subs xy 1 2))
+        ex (keyword (subs xy 2 3))
+        ey (keyword (subs xy 3 4))
+        res (m/move [sx sy] [ex ey] s/state)]
+    (println "MOVES:" sx sy ex ey)
+    (v/board res)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Routing
@@ -53,7 +53,8 @@
    (cmpj/routes
     (cmpj/GET "/start"         []            start-game)
     (cmpj/GET "/display-board" []            board)
-    (cmpj/GET "/move"          [sx sy ex ey] (move sx sy ex ey))
+    (cmpj/GET "/move"          [xy] (move xy))
+    (cmpj/ANY "/js/chess-scripts.js" [] (slurp "resources/public/js/chess-scripts.js"))
     (route/not-found           not-found-page))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -68,10 +69,10 @@
 
   (-main)
 
-  (move "2" "a" "3" "a")
+  (move "2a3a")
 
   @(http/get "http://localhost:9000/start")
   @(http/get "http://localhost:9000/display-board")
-  @(http/get "http://localhost:9000/move?sx=2&sy=a&ex=4&ey=a")
+  @(http/get "http://localhost:9000/move?xy=2a4a")
 
   :end)
