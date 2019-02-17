@@ -30,7 +30,8 @@
                   (assoc :8 {:a p/rook :b p/bishop :c p/knight :d p/queen :e p/king :f p/knight :g p/bishop :h p/rook})
                   (b/->board :colorize))]
     (swap! state assoc-in [:board] board))
-  @state)
+  {:round (:round @state)
+   :board (b/->board (:board @state) :display)})
 
 (defn update-piece!
   "Update the state after moving a piece (non kill)"
@@ -48,16 +49,20 @@
                       (update-in [:points col] + (:value piece))))))
 
 (defn update-move!
-  "Update the state after moving a piece (non kill)"
+  "Update the state after moving a piece"
   [[sx sy] [ex ey] piece]
+  (when (not= ""  (get-in (:board @state) [ex ey]))
+    (update-kill! (get-in (:board @state) [ex ey])))
   (swap! state #(-> %
                     (assoc-in [:board ex ey] piece)
                     (assoc-in [:board sx sy] "")
                     (assoc-in [:history (-> (:round @state) str keyword)] (:board @state))
                     (update-in [:round] inc)))
-  (when (not= "" (get-in (:board @state) [ex ey]))
-    (update-kill! (get-in (:board @state) [ex ey]))
-  {:piece (:name piece) :from [sx sy] :to [ex ey]}))
+  {:move {:piece (:name piece) :from [sx sy] :to [ex ey]}
+   :round   (:round   @state)
+   :points  (:points  @state)
+   :kills   (:kills   @state)
+   :board   (b/->board (:board @state) :display)})
 
 
 (comment

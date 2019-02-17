@@ -131,8 +131,8 @@
   (blocked?  [:3 :e] [:5 :d] (:board @s/state))
 
   ;; All you need is this to move the pawns
-  (move      [:3 :e] [:5 :d] s/state)
-  
+  (move      [:2 :d] [:4 :d] s/state)
+
   (move      [:7 :a] [:6 :a] s/state)
 
 
