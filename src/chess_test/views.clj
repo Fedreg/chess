@@ -1,8 +1,9 @@
 (ns chess-test.views
   (:require
-   [hiccup.core    :refer :all]
-   [hiccup.page    :as page]
-   [clojure.string :as str])
+   [hiccup.core      :refer :all]
+   [hiccup.page      :as page]
+   [chess-test.board :as b]
+   [clojure.string   :as str])
   (:import java.net.URI))
 
 (declare square)
@@ -23,7 +24,10 @@
   "gets the pieces from the state.board and inserts them into dom"
   [row data]
   (let [base  (map-indexed
-               (fn [idx [k v]] (square row idx v))
+               (fn [idx [k v]]
+                 (let [piece (:name v)
+                       color (:color v)]
+                   (square row idx piece color)))
                (get-in data [:board (-> row str keyword)]))
         final (reduce (fn [acc v] (conj acc v))
                       [:div square-row-style]
@@ -34,17 +38,19 @@
 ;; Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn square-style [row n]
+(defn square-style [row n color]
   (style
    {:box-sizing       "border-box"
+    :color            (if (= :black color) "#0c60f0" "#ddd")
     :width            "60px"
     :height           "60px"
-    :border           "1px solid #aaa"
+    :border           "1px solid #0c60f0"
+    :margin           "3px 3px 0 0"
     :padding          "20px 25px"
     :background-color (cond
-                        (and (odd?  row) (odd?  n)) "#fff"
-                        (and (even? row) (even? n)) "#fff"
-                        :else                       "#bbb")}))
+                        (and (odd?  row) (odd?  n)) "#222"
+                        (and (even? row) (even? n)) "#222"
+                        :else                       "#333")}))
 
 (def square-row-style
   (style
@@ -58,17 +64,24 @@
 
 (def file-row-style
   (style
-   {:color "#ccc"
+   {:color "#555"
     :padding "10px 26px"}))
 
 (def rank-row-style
   (style
-   {:color "#ccc"
+   {:color "#555"
     :padding "20px 10px"}))
 
-(def move-button-style
+(def page-style
   (style
-   {:padding "20px"}))
+   {:height           "100%"
+    :width            "100%"
+    :margin           "100px"
+    :background-color "#222"}))
+
+(def body-style
+  (style
+   {:background-color "#222"}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Markup
@@ -76,29 +89,27 @@
 
 (defn square
   "View for each square of the board"
-  [row n piece]
-  [:div (square-style row n) piece])
-
-(def move-button
-  "The button that triggers a move"
-  [:div move-button-style
-    "from:  "
-    [:input#move-start {:type "text" :value "2d"}]
-    "to:  "
-    [:input#move-end   {:type "text" :value "4d"}]
-    [:button {:onclick "sendMove();"} "move"]])
+  [row n piece color]
+  (let [id  (str "div#" row n)
+        div (keyword id)]
+  [div
+   (assoc
+    (square-style row n color)
+    :onclick
+    "selectSquare(this);")
+   piece]))
 
 (def file-row
   "In chess, the horizontal rows are called 'file'"
   [:div
-   [:span file-style "a"]
-   [:span file-style "b"]
-   [:span file-style "c"]
-   [:span file-style "d"]
-   [:span file-style "e"]
-   [:span file-style "f"]
-   [:span file-style "g"]
-   [:span file-style "h"]])
+   [:span file-row-style "a"]
+   [:span file-row-style "b"]
+   [:span file-row-style "c"]
+   [:span file-row-style "d"]
+   [:span file-row-style "e"]
+   [:span file-row-style "f"]
+   [:span file-row-style "g"]
+   [:span file-row-style "h"]])
 
 (defn board
   "Main board view"
@@ -128,24 +139,6 @@
   (page/html5
    [:head
     (page/include-js "js/chess-scripts.js")]
-   [:body
-    [:div#body
-     (board data)]
-    move-button]))
-
-
-(comment
-  (def samp-board
-  {:board {:8 {:a :r, :b :b, :c :k, :d :Q, :e :K, :f :k, :g :b, :h :r},
-           :7 {:a :p, :b :p, :c :p, :d :p, :e :p, :f :p, :g :p, :h :p},
-           :6 {:a "", :b "", :c "", :d "", :e "", :f "", :g "", :h ""},
-           :5 {:a "", :b "", :c "", :d "", :e "", :f "", :g "", :h ""},
-           :4 {:a "", :b "", :c "", :d "", :e "", :f "", :g "", :h ""},
-           :3 {:a "", :b "", :c "", :d "", :e "", :f "", :g "", :h ""},
-           :2 {:a :p, :b :p, :c :p, :d :p, :e :p, :f :p, :g :p, :h :p},
-           :1 {:a :r, :b :b, :c :k, :d :Q, :e :K, :f :k, :g :b, :h :r}}})
-
-  (html (square-row nil))
-  (board samp-board)
-
-  :end-comment)
+   [:body body-style 
+    [:div#body page-style
+     (board data)]]))

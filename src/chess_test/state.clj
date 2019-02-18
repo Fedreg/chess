@@ -30,7 +30,7 @@
                   (assoc :8 {:a p/rook :b p/bishop :c p/knight :d p/queen :e p/king :f p/knight :g p/bishop :h p/rook})
                   (b/->board :colorize))]
     (swap! state assoc-in [:board] board))
-  {:round (:round @state)
+  #_{:round (:round @state)
    :board (b/->board (:board @state) :display)})
 
 (defn update-piece!

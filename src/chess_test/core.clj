@@ -33,15 +33,19 @@
 (defn board [req]
   (html [:div (b/->board (:board @s/state) :display)]))
 
+(def letters [:a :b :c :d :e :f :g :h])
+
 (defn move [xy]
-  (let [sx (keyword (subs xy 0 1))
-        sy (keyword (subs xy 1 2))
-        ex (keyword (subs xy 2 3))
-        ey (keyword (subs xy 3 4))
+  (println "SDFD" xy)
+  (let [row [:a :b :c :d :e :f :g :h]
+        sx  (keyword (subs xy 0 1))
+        ex  (keyword (subs xy 2 3))
+        sy  (->> (subs xy 1 2) Integer/parseInt (nth row) keyword)
+        ey  (->> (subs xy 3 4) Integer/parseInt (nth row) keyword)
         res (m/move [sx sy] [ex ey] s/state)]
     (println "MOVES:" sx sy ex ey)
     (if (not= :illegal res)
-      (page/html5 (v/board res))
+      (page/html5 (v/board @s/state))
       "illegal")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -51,11 +55,11 @@
 (def router
   (params/wrap-params
    (cmpj/routes
-    (cmpj/GET "/start"         []            start-game)
-    (cmpj/GET "/display-board" []            board)
-    (cmpj/GET "/move"          [xy] (move xy))
-    (cmpj/ANY "/js/chess-scripts.js" [] (slurp "resources/public/js/chess-scripts.js"))
-    (route/not-found           not-found-page))))
+    (cmpj/GET "/start"               []   start-game)
+    (cmpj/GET "/display-board"       []   board)
+    (cmpj/GET "/move"                [xy] (move xy))
+    (cmpj/ANY "/js/chess-scripts.js" []   (slurp "resources/public/js/chess-scripts.js"))
+    (route/not-found                 not-found-page))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Main
