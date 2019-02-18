@@ -4,8 +4,8 @@
 (def bishop {:max 8 :direction :diagonal :attack :diagonal :name :b :value 3})
 (def knight {:max 2 :direction :el       :attack :el       :name :k :value 3})
 (def rook   {:max 8 :direction :straight :attack :straight :name :r :value 5})
-(def queen  {:max 8 :direction :any      :attack :multi    :name :Q :value 9})
-(def king   {:max 1 :direction :any      :attack :multi    :name :K :value :mate})
+(def queen  {:max 8 :direction :multi    :attack :multi    :name :Q :value 9})
+(def king   {:max 1 :direction :multi    :attack :multi    :name :K :value :mate})
 
 (defn name->piece [name]
   (case name

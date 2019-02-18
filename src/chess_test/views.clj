@@ -42,9 +42,9 @@
     :border           "1px solid #aaa"
     :padding          "20px 25px"
     :background-color (cond
-                        (and (odd?  row) (odd?  n)) "fff"
-                        (and (even? row) (even? n)) "fff"
-                        :else                       "bbb")}))
+                        (and (odd?  row) (odd?  n)) "#fff"
+                        (and (even? row) (even? n)) "#fff"
+                        :else                       "#bbb")}))
 
 (def square-row-style
   (style
@@ -54,43 +54,84 @@
 (def board-style
   (style
    {:display        "flex"
-    :flex-direction "column"
-    }))
+    :flex-direction "column"}))
+
+(def file-row-style
+  (style
+   {:color "#ccc"
+    :padding "10px 26px"}))
+
+(def rank-row-style
+  (style
+   {:color "#ccc"
+    :padding "20px 10px"}))
+
+(def move-button-style
+  (style
+   {:padding "20px"}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Markup
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn square [row n piece]
+(defn square
+  "View for each square of the board"
+  [row n piece]
   [:div (square-style row n) piece])
 
 (def move-button
-  [:div
+  "The button that triggers a move"
+  [:div move-button-style
     "from:  "
     [:input#move-start {:type "text" :value "2d"}]
     "to:  "
     [:input#move-end   {:type "text" :value "4d"}]
     [:button {:onclick "sendMove();"} "move"]])
 
-(defn board [data]
-  [:div board-style
-   [:div square-row-style (get-pieces 1 data)]
-   [:div square-row-style (get-pieces 2 data)]
-   [:div square-row-style (get-pieces 3 data)]
-   [:div square-row-style (get-pieces 4 data)]
-   [:div square-row-style (get-pieces 5 data)]
-   [:div square-row-style (get-pieces 6 data)]
-   [:div square-row-style (get-pieces 7 data)]
-   [:div square-row-style (get-pieces 8 data)]
-   move-button])
+(def file-row
+  "In chess, the horizontal rows are called 'file'"
+  [:div
+   [:span file-style "a"]
+   [:span file-style "b"]
+   [:span file-style "c"]
+   [:span file-style "d"]
+   [:span file-style "e"]
+   [:span file-style "f"]
+   [:span file-style "g"]
+   [:span file-style "h"]])
 
-(defn page [data]
+(defn board
+  "Main board view"
+  [data]
+  [:div board-style
+   [:div square-row-style (get-pieces 8 data)
+    [:span rank-row-style "8"]]
+   [:div square-row-style (get-pieces 7 data)
+    [:span rank-row-style "7"]]
+   [:div square-row-style (get-pieces 6 data)
+    [:span rank-row-style "6"]]
+   [:div square-row-style (get-pieces 5 data)
+    [:span rank-row-style "5"]]
+   [:div square-row-style (get-pieces 4 data)
+    [:span rank-row-style "4"]]
+   [:div square-row-style (get-pieces 3 data)
+    [:span rank-row-style "3"]]
+   [:div square-row-style (get-pieces 2 data)
+    [:span rank-row-style "2"]]
+   [:div square-row-style (get-pieces 1 data)
+    [:span rank-row-style "1"]]
+   file-row])
+
+(defn page
+  "Main page view"
+  [data]
   (page/html5
    [:head
     (page/include-js "js/chess-scripts.js")]
    [:body
     [:div#body
-     (board data)]]))
+     (board data)]
+    move-button]))
 
 
 (comment
