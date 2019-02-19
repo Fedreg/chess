@@ -36,7 +36,6 @@
 (def letters [:a :b :c :d :e :f :g :h])
 
 (defn move [xy]
-  (println "SDFD" xy)
   (let [row [:a :b :c :d :e :f :g :h]
         sx  (keyword (subs xy 0 1))
         ex  (keyword (subs xy 2 3))
@@ -45,7 +44,7 @@
         res (m/move [sx sy] [ex ey] s/state)]
     (println "MOVES:" sx sy ex ey)
     (if (not= :illegal res)
-      (page/html5 (v/board @s/state))
+      (-> @s/state :board v/board page/html5)
       "illegal")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

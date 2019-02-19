@@ -28,7 +28,7 @@
                  (let [piece (:name v)
                        color (:color v)]
                    (square row idx piece color)))
-               (get-in data [:board (-> row str keyword)]))
+               (get-in data [(-> row str keyword)]))
         final (reduce (fn [acc v] (conj acc v))
                       [:div square-row-style]
                       base)]
@@ -45,7 +45,7 @@
     :width            "60px"
     :height           "60px"
     :border           "1px solid #0c60f0"
-    :margin           "3px 3px 0 0"
+    :margin           "6px 6px 0 0"
     :padding          "20px 25px"
     :background-color (cond
                         (and (odd?  row) (odd?  n)) "#222"
@@ -65,12 +65,12 @@
 (def file-row-style
   (style
    {:color "#555"
-    :padding "10px 26px"}))
+    :padding "10px 29px"}))
 
 (def rank-row-style
   (style
    {:color "#555"
-    :padding "20px 10px"}))
+    :padding "22px 10px"}))
 
 (def page-style
   (style
@@ -82,6 +82,11 @@
 (def body-style
   (style
    {:background-color "#222"}))
+
+(defn turn-style [round]
+  (style
+   {:color "#fff"
+    :font-size "20px"}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Markup
@@ -133,12 +138,18 @@
     [:span rank-row-style "1"]]
    file-row])
 
+(defn turn
+  "Displays whose turn it is"
+  [round]
+  [:div (turn-style round) (if (odd? round) :white :black)])
+
 (defn page
   "Main page view"
   [data]
   (page/html5
    [:head
     (page/include-js "js/chess-scripts.js")]
-   [:body body-style 
+   [:body body-style
     [:div#body page-style
-     (board data)]]))
+     (board (:board data))
+     (turn  (:round data))]]))
