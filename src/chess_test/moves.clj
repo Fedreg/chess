@@ -1,7 +1,7 @@
 (ns chess-test.moves
   (:require
-   [chess-test.state :as s]
-   [chess-test.board :as b]
+   [chess-test.state  :as s]
+   [chess-test.board  :as b]
    [chess-test.pieces :as p]))
 
 ;; In chess, "file" refers to vertical position; "rank" refers to horizontal
@@ -49,50 +49,66 @@
   (or (straight? [sx sy] [ex ey])
       (diagonal? [sx sy] [ex ey])))
 
+(defn x-loop
+  "Check for any pieces blocking horizontal moves"
+  [[sx sy] [ex ey] board same-color?]
+  (let [dir  (if (< (.indexOf file sy) (.indexOf file ey)) inc dec)
+        comp (if (< (.indexOf file sy) (.indexOf file ey)) <= >=)]
+  (loop [x sx
+          y (file (dir (.indexOf file sy)))]
+     (when (comp (.indexOf file y) (.indexOf file ey))
+       (if (not= "" (get-in board [x y]))
+         (when same-color? true)
+         (recur x (file (dir (.indexOf file y)))))))))
+
+(defn y-loop
+  "Check for any pieces blocking vertical moves"
+  [[sx sy] [ex ey] board same-color?]
+  (let [dir  (if (< (.indexOf rank sx) (.indexOf rank ex)) inc dec)
+        comp (if (< (.indexOf rank sx) (.indexOf rank ex)) <= >=)]
+  (loop [y sy
+          x (rank (dir (.indexOf rank sx)))]
+     (when (comp (.indexOf rank x) (.indexOf rank ex))
+       (if (not= "" (get-in board [x y]))
+         (when same-color? true)
+         (recur y (rank (dir (.indexOf rank x)))))))))
+
+(defn x-y-loop
+  "Check for any pieces blocking diagonal moves"
+  [[sx sy] [ex ey] board same-color?]
+  (let [x-dir  (if (< (.indexOf rank sx) (.indexOf rank ex)) inc dec)
+        y-dir  (if (< (.indexOf rank sy) (.indexOf rank ey)) inc dec)
+        x-comp (if (< (.indexOf rank sx) (.indexOf rank ex)) <= >=)
+        y-comp (if (< (.indexOf rank sy) (.indexOf rank ey)) <= >=)]
+    (loop [x (rank (x-dir (.indexOf rank sx)))
+            y (file (y-dir (.indexOf file sy)))]
+       (when (and (x-comp (.indexOf rank x) (.indexOf rank ex))
+                  (y-comp (.indexOf file y) (.indexOf file ey)))
+         (if (not= "" (get-in board [x y]))
+           (when same-color? true)
+           (recur (rank (x-dir (.indexOf rank x)))
+                  (file (y-dir (.indexOf file y)))))))))
+
 (defn blocked?
   "Is any other piece blocking the movement of piece"
-  ;; TODO This works for ascending moves, make sure you're always calculating as such
-  ;; TODO Clean this up!!!  Terrible code
   [[sx sy] [ex ey] board]
-  (let [piece   (get-in board [sx sy])
-        e-piece (get-in board [ex ey])
-        x-loop #(loop [x %
-                       y (file (inc (.indexOf file sy)))]
-                  (when (<= (.indexOf file y) (.indexOf file ey))
-                    (if (not= "" (get-in board [x y]))
-                      (if (if (= :white (:color piece))
-                            (= :black (:color e-piece))
-                            (= :white (:color e-piece)))
-                        nil
-                        :block)
-                      (recur x (file (inc (.indexOf file sy)))))))
-        y-loop #(loop [y %
-                       x (rank (inc (.indexOf rank sx)))]
-                  (when (<= (.indexOf rank x) (.indexOf rank ex))
-                    (if (not= "" (get-in board [x y]))
-                      (if (if (= :white (:color piece))
-                            (= :black (:color e-piece))
-                            (= :white (:color e-piece)))
-                        nil
-                        :block)
-                      (recur y (rank (inc (.indexOf rank x)))))))
-        x-y-loop #(loop [x (rank (inc (.indexOf rank %1)))
-                         y (file (inc (.indexOf file %2)))]
-                    (when (and (<= (.indexOf rank x) (.indexOf rank ex))
-                               (<= (.indexOf file y) (.indexOf file ey)))
-                      (if (not= "" (get-in board [x y]))
-                        (if (if (= :white (:color piece))
-                              (= :black (:color e-piece))
-                              (= :white (:color e-piece)))
-                          nil
-                          :block)
-                        (recur (rank (inc (.indexOf rank x)))
-                               (file (inc (.indexOf file y)))))))
-        block (cond
-                (el? [sx sy] [ex ey]) nil
-                (= sx ex)             (x-loop sx)
-                (= sy ey)             (y-loop sy)
-                :else                 (x-y-loop sx sy))]
+  (let [piece       (get-in board [sx sy])
+        e-piece     (get-in board [ex ey])
+        piece-col   (:color piece)
+        e-piece-col (:color e-piece)
+        same-color? (= piece-col e-piece-col)
+        block       (cond
+                      (el? [sx sy] [ex ey])
+                      (when same-color? true)
+
+                      (= sx ex)
+                      (x-loop [sx sy] [ex ey] board same-color?)
+
+                      (= sy ey)
+                      (y-loop [sx sy] [ex ey] board same-color?)
+
+                      :else
+                      (x-y-loop [sx sy] [ex ey] board same-color?))]
     block))
 
 (defn turn?
@@ -164,7 +180,7 @@
   (diagonal? [:3 :a] [:1 :c])
   (el?       [:2 :c] [:1 :a])
   (multi?    [:2 :c] [:7 :b])
-  (blocked?  [:3 :e] [:5 :d] (:board @s/state))
+  (blocked?  [:2 :e] [:4 :e] (:board @s/state))
 
   ;; All you need is this to move the pawns
   (move      [:2 :d] [:4 :d] @s/state)

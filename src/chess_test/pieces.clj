@@ -5,7 +5,7 @@
 (def knight {:max 2 :direction :el       :attack :el       :name :k :value 3})
 (def rook   {:max 8 :direction :straight :attack :straight :name :r :value 5})
 (def queen  {:max 8 :direction :multi    :attack :multi    :name :Q :value 9})
-(def king   {:max 1 :direction :multi    :attack :multi    :name :K :value :mate})
+(def king   {:max 1 :direction :multi    :attack :multi    :name :K :value 25})
 
 (defn name->piece [name]
   (case name

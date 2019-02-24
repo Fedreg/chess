@@ -80,10 +80,34 @@
     :value 1,
     :color :black})
 
+(def b-knight
+  {:max 2,
+   :direction :el,
+   :attack :el,
+   :name :k,
+   :value 3,
+   :color :black})
+
+(def w-queen
+  {:max 8,
+   :direction :multi,
+   :attack :multi,
+   :name :Q,
+   :value 9,
+   :color :white})
+
+(def w-pawn
+  {:max 2,
+    :direction :straight,
+    :attack :diagonal,
+    :name :p,
+    :value 1,
+    :color :white})
+
 (def test-board1
-  {:8 {:a :r, :b :b, :c :k, :d :Q, :e :K, :f :k, :g :b, :h :r},
-   :7 {:a :p, :b :p, :c "", :d :p, :e :p, :f :p, :g :p, :h b-pawn},
-   :6 {:a "", :b "", :c :p, :d "", :e "", :f "", :g "", :h ""},
+  {:8 {:a :r, :b :b, :c b-knight, :d :Q, :e :K, :f :k, :g :b, :h :r},
+   :7 {:a :p, :b :p, :c :p, :d :p, :e :p, :f :p, :g :p, :h b-pawn},
+   :6 {:a "", :b "", :c "", :d b-pawn, :e "", :f "", :g "", :h ""},
    :5 {:a "", :b "", :c "", :d "", :e "", :f "", :g "", :h ""},
    :4 {:a "", :b "", :c "", :d "", :e "", :f "", :g "", :h ""},
    :3 {:a "", :b "", :c :p, :d "", :e "", :f "", :g "", :h ""},
@@ -92,16 +116,23 @@
 
 (def test-board2
   {:8 {:a :r, :b :b, :c :k, :d :Q, :e :K, :f :k, :g :b, :h :r},
-   :7 {:a "", :b "", :c :p, :d :p, :e :p, :f :p, :g :p, :h :p},
+   :7 {:a "", :b "", :c :p, :d b-pawn, :e :p, :f :p, :g :p, :h :p},
    :6 {:a "", :b "", :c "", :d "", :e "", :f "", :g "", :h ""},
    :5 {:a "", :b :p, :c "", :d "", :e "", :f "", :g "", :h ""},
    :4 {:a "", :b "", :c "", :d "", :e "", :f "", :g "", :h ""},
    :3 {:a "", :b "", :c "", :d "", :e "", :f "", :g "", :h ""},
-   :2 {:a "", :b :p, :c :p, :d :p, :e :p, :f :p, :g :p, :h :p},
-   :1 {:a :r, :b :b, :c :k, :d :Q, :e :K, :f :k, :g :b, :h :r}})
+   :2 {:a "", :b :p, :c w-pawn, :d "", :e :p, :f :p, :g :p, :h :p},
+   :1 {:a :r, :b :b, :c :k, :d w-queen, :e :K, :f :k, :g :b, :h :r}})
 
 (deftest blocked-test
   (testing "blocked? fn"
     (is (= true (m/diagonal? [:1 :b] [:7 :h])))
     (is (= nil  (m/blocked?  [:1 :b] [:7 :h] test-board1)))
+    (is (= true (m/straight? [:2 :a] [:4 :a])))
+    (is (= nil  (m/blocked?  [:2 :a] [:4 :a] test-board1)))
+    (is (= true (m/el?       [:8 :c] [:6 :d])))
+    (is (= true (m/blocked?  [:8 :c] [:6 :d] test-board1)))
+    (is (= nil  (m/blocked?  [:8 :c] [:6 :b] test-board1)))
+    (is (= true (m/blocked?  [:1 :d] [:2 :c] test-board2)))
+    (is (= nil  (m/blocked?  [:1 :d] [:7 :d] test-board2)))
     ))
