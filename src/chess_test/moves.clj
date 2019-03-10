@@ -11,15 +11,25 @@
 (defn diff [a b]
   (if (> a b) (- a b) (- b a)))
 
+(defn ior
+  "indexOf rank"
+  [x]
+  (.indexOf rank x))
+
 (defn ior-diff
   "indexOf rank diff"
   [sx ex]
-  (diff (.indexOf rank sx) (.indexOf rank ex)))
+  (diff (ior sx) (ior ex)))
+
+(defn iof
+  "indexOf file"
+  [y]
+  (.indexOf file y))
 
 (defn iof-diff
   "indexOf file diff"
   [sy ey]
-  (diff (.indexOf file sy) (.indexOf file ey)))
+  (diff (iof sy) (iof ey)))
 
 (defn straight?
   "Is move a stright move? .i.e. rook"
@@ -52,42 +62,44 @@
 (defn x-loop
   "Check for any pieces blocking horizontal moves"
   [[sx sy] [ex ey] board same-color?]
-  (let [dir  (if (< (.indexOf file sy) (.indexOf file ey)) inc dec)
-        comp (if (< (.indexOf file sy) (.indexOf file ey)) <= >=)]
+  (let [dir  (if (< (iof sy) (iof ey)) inc dec)
+        comp (if (< (iof sy) (iof ey)) <= >=)]
   (loop [x sx
-          y (file (dir (.indexOf file sy)))]
-     (when (comp (.indexOf file y) (.indexOf file ey))
+         y (file (dir (iof sy)))]
+     (when (comp (iof y) (iof ey))
        (if (not= "" (get-in board [x y]))
          (when same-color? true)
-         (recur x (file (dir (.indexOf file y)))))))))
+         (recur x (file (dir (iof y)))))))))
 
 (defn y-loop
   "Check for any pieces blocking vertical moves"
   [[sx sy] [ex ey] board same-color?]
-  (let [dir  (if (< (.indexOf rank sx) (.indexOf rank ex)) inc dec)
-        comp (if (< (.indexOf rank sx) (.indexOf rank ex)) <= >=)]
+  (let [dir  (if (< (ior sx) (ior ex)) inc dec)
+        comp (if (< (ior sx) (ior ex)) <= >=)]
   (loop [y sy
-          x (rank (dir (.indexOf rank sx)))]
-     (when (comp (.indexOf rank x) (.indexOf rank ex))
+         x (rank (dir (ior sx)))]
+     (when (comp (ior x) (ior ex))
        (if (not= "" (get-in board [x y]))
          (when same-color? true)
-         (recur y (rank (dir (.indexOf rank x)))))))))
+         (recur y (rank (dir (ior x)))))))))
 
 (defn x-y-loop
   "Check for any pieces blocking diagonal moves"
   [[sx sy] [ex ey] board same-color?]
-  (let [x-dir  (if (< (.indexOf rank sx) (.indexOf rank ex)) inc dec)
-        y-dir  (if (< (.indexOf rank sy) (.indexOf rank ey)) inc dec)
-        x-comp (if (< (.indexOf rank sx) (.indexOf rank ex)) <= >=)
-        y-comp (if (< (.indexOf rank sy) (.indexOf rank ey)) <= >=)]
-    (loop [x (rank (x-dir (.indexOf rank sx)))
-            y (file (y-dir (.indexOf file sy)))]
-       (when (and (x-comp (.indexOf rank x) (.indexOf rank ex))
-                  (y-comp (.indexOf file y) (.indexOf file ey)))
-         (if (not= "" (get-in board [x y]))
+  (let [x-dir  (if (< (ior sx) (ior ex)) inc dec)
+        y-dir  (if (< (iof sy) (iof ey)) inc dec)
+        x-comp (if (< (ior sx) (ior ex)) <= >=)
+        y-comp (if (< (iof sy) (iof ey)) <= >=)]
+    (loop [x (rank (x-dir (ior sx)))
+           y (file (y-dir (iof sy)))]
+       (when (and (x-comp (ior x) (ior ex))
+                  (y-comp (iof y) (iof ey)))
+         (if (or (not= "" (get-in board [x y]))
+                 (= :a y)
+                 (= :h y))
            (when same-color? true)
-           (recur (rank (x-dir (.indexOf rank x)))
-                  (file (y-dir (.indexOf file y)))))))))
+           (recur (rank (x-dir (ior x)))
+                  (file (y-dir (iof y)))))))))
 
 (defn blocked?
   "Is any other piece blocking the movement of piece"
@@ -183,7 +195,7 @@
   (blocked?  [:2 :e] [:4 :e] (:board @s/state))
 
   ;; All you need is this to move the pawns
-  (move      [:2 :d] [:4 :d] @s/state)
+  (move      [:2 :d] [:4 :d] s/state)
 
   (move      [:7 :a] [:6 :a] s/state)
 

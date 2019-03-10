@@ -1,7 +1,10 @@
 {:deps     {org.clojure/clojure                              {:mvn/version "1.10.0"}
+            org.clojure/data.json                            {:mvn/version "0.2.6"}
+            com.cognitect/transit-clj                        {:mvn/version "0.8.313"}
             http-kit                                         {:mvn/version "2.3.0"}
             hiccup                                           {:mvn/version "1.0.5"}
-            compojure                                        {:mvn/version "1.6.1"}}
+            compojure                                        {:mvn/version "1.6.1"}
+            ring-cors                                        {:mvn/version "0.1.13"}}
 
  :aliases  {:nrepl {:extra-deps {nrepl/nrepl                 {:mvn/version "0.4.5"}}}
 

@@ -124,6 +124,17 @@
    :2 {:a "", :b :p, :c w-pawn, :d "", :e :p, :f :p, :g :p, :h :p},
    :1 {:a :r, :b :b, :c :k, :d w-queen, :e :K, :f :k, :g :b, :h :r}})
 
+(def test-board3
+  {:8 {:a :r, :b "", :c "", :d "", :e :K, :f "", :g :b, :h :r},
+   :7 {:a :p, :b :p, :c "", :d "", :e "", :f :p, :g "", :h :p},
+   :6 {:a "", :b "", :c "", :d "", :e :k, :f "", :g :p, :h ""},
+   :5 {:a "", :b "", :c "", :d :p, :e "", :f "", :g "", :h ""},
+   :4 {:a "", :b "", :c "", :d "", :e "", :f "", :g "", :h ""},
+   :3 {:a "", :b :p, :c "", :d "", :e :p, :f "", :g "", :h :p},
+   :2 {:a :p, :b :p, :c "", :d "", :e "", :f :K, :g :p, :h ""},
+   :1 {:a :r, :b "", :c "", :d "", :e "", :f "", :g "", :h :r}})
+
+;; 2a -> 3b or , that was already done and now, 1a -> 7a = Index out of bounds exception
 (deftest blocked-test
   (testing "blocked? fn"
     (is (= true (m/diagonal? [:1 :b] [:7 :h])))
