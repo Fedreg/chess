@@ -41,7 +41,7 @@
   (println "STARTING NEW GAME")
   (s/new-game!)
   (serialize
-   (:board @s/state)))
+   (dissoc @s/state :history)))
 
 (defn board [req]
   (html [:div (b/->board (:board @s/state) :display)]))
@@ -55,7 +55,7 @@
         res (m/move [sx sy] [ex ey] s/state)]
     (println "MOVES:" sx sy ex ey)
     (if (not= :illegal res)
-      (serialize (:board @s/state))
+      (serialize (dissoc @s/state :history))
       (serialize :illegal))))
 
 (m/move [:2 :a] [ :4 :a] s/state)
