@@ -97,7 +97,10 @@
          (if (or (not= "" (get-in board [x y]))
                  (= :a y)
                  (= :h y))
-           (when same-color? true)
+           (when (or same-color?
+                     (= (get-in board [sx sy :color])
+                        (get-in board [ x  y :color])))
+                     true)
            (recur (rank (x-dir (ior x)))
                   (file (y-dir (iof y)))))))))
 
@@ -195,7 +198,7 @@
   (blocked?  [:2 :e] [:4 :e] (:board @s/state))
 
   ;; All you need is this to move the pawns
-  (move      [:2 :d] [:4 :d] s/state)
+  (move      [:1 :b] [:3 :d] s/state)
 
   (move      [:7 :a] [:6 :a] s/state)
 
