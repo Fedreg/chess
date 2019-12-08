@@ -141,7 +141,7 @@
 (defn turn
   "Displays whose turn it is"
   [round]
-  [:div (turn-style round) (if (odd? round) :white :black)])
+  [:div (turn-style round) [:div round] [:div (if (odd? round) :white :black)]])
 
 (defn page
   "Main page view"

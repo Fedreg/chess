@@ -198,8 +198,8 @@
   (blocked?  [:2 :e] [:4 :e] (:board @s/state))
 
   ;; All you need is this to move the pawns
-  (move      [:1 :b] [:3 :d] s/state)
-
+  (move      [:2 :b] [:3 :b] s/state)
+arr
   (move      [:7 :a] [:6 :a] s/state)
 
   (:board @s/state)

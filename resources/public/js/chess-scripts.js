@@ -2,6 +2,7 @@
 
 function loadPage() {
     let resText = this.responseText;
+    console.log("RESTEXT", resText);
     let body = document.getElementById("body");
     if (resText != "illegal") {
         body.innerHTML = resText;

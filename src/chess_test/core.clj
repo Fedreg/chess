@@ -15,8 +15,7 @@
    [chess-test.moves       :as m]
    [chess-test.board       :as b]
    [chess-test.views       :as v]
-   [chess-test.state       :as s])
-  (:import [java.io ByteArrayInputStream ByteArrayOutputStream]))
+   [chess-test.state       :as s]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Default Responses
@@ -25,40 +24,35 @@
 (def not-found-page
   {:status  404
    :headers {"Content-Type" "application/json; charset=utf-8"}
-   :body    (html [:h3 "the page you navigated to does not exist! You'vek made a mistake"])})
+   :body    (html [:h3 "the page you navigated to does not exist! You've made a mistake"])})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Handlers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn serialize [data]
-  (let [out    (ByteArrayOutputStream. 4096)
-        writer (ts/writer out :json)]
-    (ts/write writer data)
-    (.toString out)))
-
 (defn start-game [req]
   (println "STARTING NEW GAME")
-  (s/new-game!)
-  (serialize
-   (dissoc @s/state :history)))
+  (v/page (s/new-game!)))
 
 (defn board [req]
   (html [:div (b/->board (:board @s/state) :display)]))
 
-(defn move [xy]
-  (println "MOVES!" xy)
-  (let [sx  (keyword (subs xy 0 1))
-        ex  (keyword (subs xy 2 3))
-        sy  (keyword (subs xy 1 2))
-        ey  (keyword (subs xy 3 4))
-        res (m/move [sx sy] [ex ey] s/state)]
-    (println "MOVES:" sx sy ex ey)
-    (if (not= :illegal res)
-      (serialize (dissoc @s/state :history))
-      (serialize :illegal))))
+(def letters [:a :b :c :d :e :f :g :h])
 
-(m/move [:2 :a] [ :4 :a] s/state)
+(defn move [xy]
+  (let [row [:a :b :c :d :e :f :g :h]
+        sx  (keyword (subs xy 0 1))
+        ex  (keyword (subs xy 2 3))
+        sy  (->> (subs xy 1 2) Integer/parseInt (nth row) keyword)
+        ey  (->> (subs xy 3 4) Integer/parseInt (nth row) keyword)
+        res (m/move [sx sy] [ex ey] s/state)]
+    (println "MOVES:" xy "=>" sx sy ex ey res)
+    (if (not= :illegal res)
+      (-> @s/state v/page page/html5)
+      "illegal")))
+
+;; Instead of redrawing entire chess board and returning all that dom on every move, instead, just return
+;; Dom for div that were updated, aolng with their id, and then let the JS insert that new dom for just those ids.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Routing
@@ -86,9 +80,11 @@
 
 (comment
 
+  (m/move [:2 :a] [ :4 :a] s/state)
+  (s/new-game!)
   (-main)
 
-  (move "2a3a")
+  (move "2232")
 
   @(http/get "http://localhost:9000/start")
 
