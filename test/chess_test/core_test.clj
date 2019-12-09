@@ -40,6 +40,17 @@
     (is (= false (m/straight? [:1 :a] [:2 :h])))
     ))
 
+(deftest pawn-test
+  (testing "pawn? fn"
+    (is (= true  (m/pawn? [:2 :a] [:3 :a] :white)))
+    (is (= true  (m/pawn? [:2 :a] [:4 :a] :white)))
+    (is (= true  (m/pawn? [:7 :a] [:6 :a] :black)))
+    (is (= false (m/pawn? [:7 :a] [:3 :a] :black)))
+    (is (= false (m/pawn? [:2 :a] [:7 :a] :white)))
+    (is (= false (m/pawn? [:2 :a] [:4 :a] :black)))
+    (is (= false (m/pawn? [:2 :a] [:2 :h] :white)))
+    ))
+
 (deftest diagonal-test
   (testing "diagonal? fn"
     (is (= true  (m/diagonal? [:1 :a] [:8 :h])))
@@ -137,13 +148,16 @@
 ;; 2a -> 3b or , that was already done and now, 1a -> 7a = Index out of bounds exception
 (deftest blocked-test
   (testing "blocked? fn"
-    (is (= true (m/diagonal? [:1 :b] [:7 :h])))
-    (is (= nil  (m/blocked?  [:1 :b] [:7 :h] test-board1)))
-    (is (= true (m/straight? [:2 :a] [:4 :a])))
-    (is (= nil  (m/blocked?  [:2 :a] [:4 :a] test-board1)))
-    (is (= true (m/el?       [:8 :c] [:6 :d])))
-    (is (= true (m/blocked?  [:8 :c] [:6 :d] test-board1)))
-    (is (= nil  (m/blocked?  [:8 :c] [:6 :b] test-board1)))
-    (is (= true (m/blocked?  [:1 :d] [:2 :c] test-board2)))
-    (is (= nil  (m/blocked?  [:1 :d] [:7 :d] test-board2)))
+    (is (= true  (m/diagonal? [:1 :b] [:7 :h])))
+    (is (= nil   (m/blocked?  [:1 :b] [:7 :h] test-board1)))
+    (is (= true  (m/straight? [:2 :a] [:4 :a])))
+    (is (= true  (m/straight? [:1 :a] [:7 :a])))
+    (is (= true  (m/pawn?     [:2 :a] [:3 :a] :white)))
+    (is (= false (m/pawn?     [:2 :a] [:2 :b] :white)))
+    (is (= nil   (m/blocked?  [:2 :a] [:4 :a] test-board1)))
+    (is (= true  (m/el?       [:8 :c] [:6 :d])))
+    (is (= true  (m/blocked?  [:8 :c] [:6 :d] test-board1)))
+    (is (= nil   (m/blocked?  [:8 :c] [:6 :b] test-board1)))
+    (is (= true  (m/blocked?  [:1 :d] [:2 :c] test-board2)))
+    (is (= nil   (m/blocked?  [:1 :d] [:7 :d] test-board2)))
     ))

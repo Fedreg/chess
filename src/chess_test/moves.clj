@@ -39,6 +39,29 @@
       (and (not= sx ex)
            (= sy ey))))
 
+(defn pawn?
+  "Is move a stright pawn move?"
+  [[sx sy] [ex ey] color]
+  (and (not= sx ex)
+       (= sy ey)
+       (if (= :white color)
+         (> (ior ex) (ior sx))
+         (< (ior ex) (ior sx)))
+       (cond
+         (and (= sx :2)
+              (= :white color))
+         (<= (ior-diff sx ex) 2)
+         (and (not= sx :2)
+              (= :white color))
+         (<= (ior-diff sx ex) 1)
+         (and (= sx :7)
+              (= :black color))
+         (<= (ior-diff sx ex) 2)
+         (and (not= sx :2)
+              (= :black color))
+         (<= (ior-diff sx ex) 1)
+         :else false)))
+
 (defn diagonal?
   "Is move a diagonal move? .i.e. bishop"
   [[sx sy] [ex ey]]
@@ -64,12 +87,14 @@
   [[sx sy] [ex ey] board same-color?]
   (let [dir  (if (< (iof sy) (iof ey)) inc dec)
         comp (if (< (iof sy) (iof ey)) <= >=)]
-  (loop [x sx
-         y (file (dir (iof sy)))]
-     (when (comp (iof y) (iof ey))
-       (if (not= "" (get-in board [x y]))
-         (when same-color? true)
-         (recur x (file (dir (iof y)))))))))
+    (loop [x sx
+           y (file (dir (iof sy)))]
+      (when (comp (iof y) (iof ey))
+        (if (not= "" (get-in board [x y]))
+          (when (and (not= :pos (get-in board [x y :name]))
+                     (= (get-in board [sx sy :color])
+                        (get-in board [x y   :color]))) true)
+          (recur x (file (dir (iof y)))))))))
 
 (defn y-loop
   "Check for any pieces blocking vertical moves"
@@ -80,7 +105,9 @@
          x (rank (dir (ior sx)))]
      (when (comp (ior x) (ior ex))
        (if (not= "" (get-in board [x y]))
-         (when same-color? true)
+         (when (and (not= :pos (get-in board [x y :name]))
+                    (= (get-in board [sx sy :color])
+                       (get-in board [x y   :color]))) true)
          (recur y (rank (dir (ior x)))))))))
 
 (defn x-y-loop
@@ -92,17 +119,16 @@
         y-comp (if (< (iof sy) (iof ey)) <= >=)]
     (loop [x (rank (x-dir (ior sx)))
            y (file (y-dir (iof sy)))]
-       (when (and (x-comp (ior x) (ior ex))
-                  (y-comp (iof y) (iof ey)))
-         (if (or (not= "" (get-in board [x y]))
-                 (= :a y)
-                 (= :h y))
-           (when (or same-color?
+      (when (and (x-comp (ior x) (ior ex))
+                 (y-comp (iof y) (iof ey)))
+        (if (or (not= "" (get-in board [x y]))
+                (= :a y)
+                (= :h y))
+          (when (and (not= :pos (get-in board [x y :name]))
                      (= (get-in board [sx sy :color])
-                        (get-in board [ x  y :color])))
-                     true)
-           (recur (rank (x-dir (ior x)))
-                  (file (y-dir (iof y)))))))))
+                        (get-in board [x y   :color]))) true)
+          (recur (rank (x-dir (ior x)))
+                 (file (y-dir (iof y)))))))))
 
 (defn blocked?
   "Is any other piece blocking the movement of piece"
@@ -141,13 +167,48 @@
        (= 1 (iof-diff sy ey))
        (not= "" (get-in board [ex ey]))))
 
-(defn valid-move? [[sx sy] [ex ey] dir max?]
+(defn valid-move? [[sx sy] [ex ey] {:keys [dir max? color]}]
   (case dir
     :straight (and max? (straight? [sx sy] [ex ey]))
     :diagonal (and max? (diagonal? [sx sy] [ex ey]))
     :el       (and max? (el?       [sx sy] [ex ey]))
     :multi    (and max? (multi?    [sx sy] [ex ey]))
+    :pawn     (and max? (pawn?     [sx sy] [ex ey] color))
     false))
+
+(defn possible-moves
+  "Determines all the possible moves for a given piece"
+  [x y state]
+  (let [piece (get-in state [:board x y])
+        max   (:max piece)
+        arr   []]
+    (apply concat
+           (filter identity
+                   (for [ex [:1 :2 :3 :4 :5 :6 :7 :8]
+                         ey [:a :b :c :d :e :f :g :h]]
+                     (when (and (valid-move? [x  y]
+                                             [ex ey]
+                                             {:dir   (:direction piece)
+                                              :color (:color piece)
+                                              :max?  (and max
+                                                          (>= max (ior-diff x ex))
+                                                          (>= max (iof-diff y ey)))})
+                                (let [e-piece (get-in (:board state) [ex ey])]
+                                  (and (or (= "" e-piece)
+                                           (= :pos (:name e-piece))
+                                           #_(if (= :white (:color piece))
+                                             (= :black (:color e-piece))
+                                             (= :white (:color e-piece))))
+                                       (not (blocked? [x y] [ex ey] (:board state))))))
+                                  ;; (prn "DEBUG STUFF" [ex ey
+                                  ;;               (= "" e-piece)
+                                  ;;               (= :pos (:name e-piece))
+                                  ;;               (if (= :white (:color piece))
+                                  ;;                 (= :black (:color e-piece))
+                                  ;;                 (= :white (:color e-piece)))
+                                  ;;               (blocked? [x y] [ex ey] (:board state))
+                                  ;;               ])))
+                       (conj arr [ex ey])))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Main Move Func
@@ -156,26 +217,41 @@
 (defn move
   "Determines if a move is legal. sx, sy = start x, y;  ex, ey = end x, y"
   [[sx sy] [ex ey] state]
-  (let [board   (:board @state)
-        piece   (get-in board [sx sy])
-        e-piece (get-in board [ex ey])
-        dir     (:direction piece)
-        max     (:max       piece)
-        max?    (and max
-                     (>= max (ior-diff sx ex))
-                     (>= max (iof-diff sy ey)))
-        valid?  (valid-move?  [sx sy] [ex ey] dir max?)
-        p-kill? (pawn-attack? [sx sy] [ex ey] board)
-        free?   (and (or (= "" e-piece)
-                         (if (= :white (:color piece))
-                           (= :black (:color e-piece))
-                           (= :white (:color e-piece))))
-                     (not (blocked? [sx sy] [ex ey] board)))]
-    (if (or (and valid? free?) p-kill?)
-      (if (turn? (:round @state) piece)
-        (s/update-move!  [sx sy] [ex ey] piece)
-        :other-player)
-      :illegal)))
+  (if (and (= sx ex) (= sy ey))
+    (s/update-noop! ex ey)
+    (let [board   (:board @state)
+          piece   (get-in board [sx sy])
+          color   (:color     piece)
+          e-piece (get-in board [ex ey])
+          dir     (:direction piece)
+          max     (:max       piece)
+          color   (:color     piece)
+          max?    (and max
+                       (>= max (ior-diff sx ex))
+                       (>= max (iof-diff sy ey)))
+          valid?  (valid-move?  [sx sy] [ex ey] {:dir dir :max? max? :color color})
+          p-kill? (pawn-attack? [sx sy] [ex ey] board)
+          free?   (and (or (= "" e-piece)
+                           (= :pos (:name e-piece))
+                           (if (= :white (:color piece))
+                             (= :black (:color e-piece))
+                             (= :white (:color e-piece))))
+                       (not (blocked? [sx sy] [ex ey] board)))]
+      (if (or (and valid? free?) p-kill?)
+        (if (turn? (:round @state) piece)
+          (s/update-move!  [sx sy] [ex ey] piece)
+          :other-player)
+        (do
+          (s/update-noop! ex ey)
+          :illegal)))))
+
+(defn move-start
+  "Enters the starting point for a move and calculates possilble move locations"
+  [[x y] state]
+  (let [cur-move (:current-move state)]
+    (if (= 1 (count cur-move))
+      (move (first cur-move) [x y] state)
+      (s/update-move-start! x y (possible-moves x y @state)))))
 
 (comment
   ;; State
@@ -198,10 +274,11 @@
   (blocked?  [:2 :e] [:4 :e] (:board @s/state))
 
   ;; All you need is this to move the pawns
-  (move      [:2 :b] [:3 :b] s/state)
-arr
+  (move      [:2 :a] [:3 :a] s/state)
   (move      [:7 :a] [:6 :a] s/state)
+  (move-start [:2 :a] s/state)
 
   (:board @s/state)
+  (:possible-moves @s/state)
 
   :end-comment)

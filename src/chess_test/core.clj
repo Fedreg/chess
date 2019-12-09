@@ -37,8 +37,6 @@
 (defn board [req]
   (html [:div (b/->board (:board @s/state) :display)]))
 
-(def letters [:a :b :c :d :e :f :g :h])
-
 (defn move [xy]
   (let [row [:a :b :c :d :e :f :g :h]
         sx  (keyword (subs xy 0 1))
@@ -46,13 +44,19 @@
         sy  (->> (subs xy 1 2) Integer/parseInt (nth row) keyword)
         ey  (->> (subs xy 3 4) Integer/parseInt (nth row) keyword)
         res (m/move [sx sy] [ex ey] s/state)]
-    (println "MOVES:" xy "=>" sx sy ex ey res)
+    (println "MOVES:" xy "=>" sx sy ex ey)
     (if (not= :illegal res)
       (-> @s/state v/page page/html5)
       "illegal")))
 
-;; Instead of redrawing entire chess board and returning all that dom on every move, instead, just return
-;; Dom for div that were updated, aolng with their id, and then let the JS insert that new dom for just those ids.
+(defn move2 [xy]
+  (let [row [:a :b :c :d :e :f :g :h]
+        x  (keyword (subs xy 0 1))
+        y  (->> (subs xy 1 2) Integer/parseInt (nth row) keyword)
+        res (m/move-start [x y] s/state)]
+    (if (not= :illegal res)
+      (-> @s/state v/page page/html5)
+      "illegal")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Routing
@@ -65,6 +69,7 @@
     (cmpj/GET "/start"               []   start-game)
     (cmpj/GET "/display-board"       []   board)
     (cmpj/GET "/move"                [xy] (move xy))
+    (cmpj/GET "/move2"               [xy] (move2 xy))
     (cmpj/ANY "/js/chess-scripts.js" []   (slurp "resources/public/js/chess-scripts.js"))
     (route/not-found                 not-found-page)))
    :access-control-allow-origin [#".*"]
@@ -84,11 +89,19 @@
   (s/new-game!)
   (-main)
 
-  (move "2232")
+  (move2 "22")
 
   @(http/get "http://localhost:9000/start")
 
   @(http/get "http://localhost:9000/display-board")
-  @(http/get "http://localhost:9000/move?xy=2a4a")
+  @(http/get "http://localhost:9000/move?xy=2040")
+  @(http/get "http://localhost:9000/move2?xy=20")
 
   :end)
+
+;; TODO
+;; Possible-moves does not include kills options (including diag kills for pawns)
+;; Clean up JS if condtions and url
+;; Consolidate move & move-start
+;; Factor out updates in update-fns
+;; Pass state around consistently.  Either pass it always, never pass it (i.e. subscriptions)

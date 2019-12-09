@@ -25,9 +25,10 @@
   [row data]
   (let [base  (map-indexed
                (fn [idx [k v]]
-                 (let [piece (:name v)
-                       color (:color v)]
-                   (square row idx piece color)))
+                 (let [name     (:name     v)
+                       clicked? (:clicked? v)
+                       color    (:color    v)]
+                   (square row idx name color clicked?)))
                (get-in data [(-> row str keyword)]))
         final (reduce (fn [acc v] (conj acc v))
                       [:div square-row-style]
@@ -38,16 +39,21 @@
 ;; Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn square-style [row n color]
+(defn square-style [row n color name clicked?]
   (style
    {:box-sizing       "border-box"
-    :color            (if (= :black color) "#0c60f0" "#ddd")
+    :color            (cond 
+                        clicked?         "#ddd"
+                        (= :black color) "#0c60f0"
+                        :else            "#ddd")
     :width            "60px"
     :height           "60px"
     :border           "1px solid #0c60f0"
     :margin           "6px 6px 0 0"
     :padding          "20px 25px"
     :background-color (cond
+                        clicked?                    "#0c60f0"
+                        (= :pos name)               "green"
                         (and (odd?  row) (odd?  n)) "#222"
                         (and (even? row) (even? n)) "#222"
                         :else                       "#333")}))
@@ -75,8 +81,8 @@
 (def page-style
   (style
    {:height           "100%"
-    :width            "100%"
-    :margin           "100px"
+    ;; :width            "100%"
+    ;; :margin           "100px"
     :background-color "#222"}))
 
 (def body-style
@@ -94,15 +100,15 @@
 
 (defn square
   "View for each square of the board"
-  [row n piece color]
+  [row n name color clicked?]
   (let [id  (str "div#" row n)
         div (keyword id)]
   [div
    (assoc
-    (square-style row n color)
+    (square-style row n color name clicked?)
     :onclick
     "selectSquare(this);")
-   piece]))
+   (if (= name :pos) "" name)]))
 
 (def file-row
   "In chess, the horizontal rows are called 'file'"

@@ -1,6 +1,6 @@
 (ns chess-test.pieces)
 
-(def pawn   {:max 2 :direction :straight :attack :diagonal :name :p :value 1})
+(def pawn   {:max 2 :direction :pawn     :attack :diagonal :name :p :value 1})
 (def bishop {:max 8 :direction :diagonal :attack :diagonal :name :b :value 3})
 (def knight {:max 2 :direction :el       :attack :el       :name :k :value 3})
 (def rook   {:max 8 :direction :straight :attack :straight :name :r :value 5})
