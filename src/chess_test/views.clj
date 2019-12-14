@@ -53,7 +53,7 @@
     :padding          "20px 25px"
     :background-color (cond
                         clicked?                    "#0c60f0"
-                        (= :pos name)               "green"
+                        (= :? name)                 "#0c60f0"
                         (and (odd?  row) (odd?  n)) "#222"
                         (and (even? row) (even? n)) "#222"
                         :else                       "#333")}))
@@ -108,7 +108,7 @@
     (square-style row n color name clicked?)
     :onclick
     "selectSquare(this);")
-   (if (= name :pos) "" name)]))
+   (if (= name :?) "" name)]))
 
 (def file-row
   "In chess, the horizontal rows are called 'file'"

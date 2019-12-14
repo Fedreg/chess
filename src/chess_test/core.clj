@@ -35,25 +35,24 @@
   (v/page (s/new-game!)))
 
 (defn board [req]
-  (html [:div (b/->board (:board @s/state) :display)]))
+  (-> @s/state v/page page/html5))
 
-(defn move [xy]
+(defn move2 [xy]
   (let [row [:a :b :c :d :e :f :g :h]
         sx  (keyword (subs xy 0 1))
         ex  (keyword (subs xy 2 3))
         sy  (->> (subs xy 1 2) Integer/parseInt (nth row) keyword)
         ey  (->> (subs xy 3 4) Integer/parseInt (nth row) keyword)
         res (m/move [sx sy] [ex ey] s/state)]
-    (println "MOVES:" xy "=>" sx sy ex ey)
     (if (not= :illegal res)
       (-> @s/state v/page page/html5)
       "illegal")))
 
-(defn move2 [xy]
+(defn move [xy]
   (let [row [:a :b :c :d :e :f :g :h]
         x  (keyword (subs xy 0 1))
         y  (->> (subs xy 1 2) Integer/parseInt (nth row) keyword)
-        res (m/move-start [x y] s/state)]
+        res (m/move [x y] s/state)]
     (if (not= :illegal res)
       (-> @s/state v/page page/html5)
       "illegal")))
@@ -94,8 +93,8 @@
   @(http/get "http://localhost:9000/start")
 
   @(http/get "http://localhost:9000/display-board")
-  @(http/get "http://localhost:9000/move?xy=2040")
-  @(http/get "http://localhost:9000/move2?xy=20")
+  @(http/get "http://localhost:9000/move?xy=4355")
+  @(http/get "http://localhost:9000/move2?xy=43")
 
   :end)
 

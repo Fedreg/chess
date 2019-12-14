@@ -25,8 +25,8 @@ const arr = [];
 
 function selectSquare(el) {
     let div = document.getElementById(el.id);
-    let url = "http://localhost:9000/move2?xy=";
-    let url2 = "http://localhost:9000/move?xy=";
+    let url2 = "http://localhost:9000/move2?xy=";
+    let url = "http://localhost:9000/move?xy=";
     let id = el.id;
     let bgcol = el.style.backgroundColor;
     let col = el.style.color;
