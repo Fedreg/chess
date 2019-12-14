@@ -101,7 +101,7 @@
   "Final logic that determines block in each loop fn"
   [[sx sy] [ex ey] [x y] board]
   (cond
-    (= :? (get-in board [x y :name]))
+    (true? (get-in board [x y :possible?]))
     nil 
 
     (and (not= [ex ey] [x y])
@@ -185,7 +185,7 @@
         piece-col   (:color piece)
         e-piece-col (:color e-piece)
         same-color? (and (= piece-col e-piece-col)
-                         (not= :? (:name e-piece)))
+                         (not= true (:possible? e-piece)))
         block       (cond
                       (el? [sx sy] [ex ey])
                       (when same-color? true)
@@ -257,19 +257,10 @@
                                                           (>= max (iof-diff y ey)))})
                                 (let [e-piece (get-in (:board state) [ex ey])]
                                   (and (or (= "" e-piece)
-                                           (= :? (:name e-piece))
+                                           (:possible? e-piece)
                                            (pawn-attack?  [x y] [ex ey] (:board state))
                                            (valid-attack? [x y] [ex ey] piece e-piece (:board state)))
                                        (not (blocked?     [x y] [ex ey] (:board state))))))
-                                       ;; (not (pawn-attack? [x y] [ex ey] (:board state)))
-                                  ;; (prn "DEBUG STUFF" [ex ey
-                                  ;;               (= "" e-piece)
-                                  ;;               (= :pos (:name e-piece))
-                                  ;;               (if (= :white (:color piece))
-                                  ;;                 (= :black (:color e-piece))
-                                  ;;                 (= :white (:color e-piece)))
-                                  ;;               (blocked? [x y] [ex ey] (:board state))
-                                  ;;               ])))
                        (conj arr [ex ey])))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -300,7 +291,7 @@
              p-kill? (pawn-attack? [sx sy] [ex ey] board)
              block?  (blocked? [sx sy] [ex ey] board)
              free?   (and (or (= "" e-piece)
-                              (= :? (:name e-piece))
+                              (:possible? e-piece)
                               (if (= :white (:color piece))
                                 (= :black (:color e-piece))
                                 (= :white (:color e-piece))))

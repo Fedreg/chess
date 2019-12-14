@@ -79,14 +79,18 @@
                       (update-in [:points col] + (:value piece))))))
 
 (defn update-possible-moves
-  "Adds or removes the :? tag from the board"
+  "Adds or removes the :possible? tag from the board"
   [x y action]
   (let [color (get-in @state [:board x y :color])
         moves (:possible-moves @state)]
     (when (not-empty moves)
       (if (= :add action)
-        (mapv (fn [[r f]] (swap! state assoc-in [:board r f] {:name :? :color color})) moves)
-        (mapv (fn [[r f]] (swap! state assoc-in [:board r f] ""))                      moves)))))
+        (mapv (fn [[r f]] (swap! state update-in [:board r f]
+                                 (fn [p] (if (map? p)
+                                           (assoc p :possible? true)
+                                           {:possible? true :color color}))))
+              moves)
+        (mapv (fn [[r f]] (swap! state assoc-in [:board r f] "")) moves)))))
 
 (defn move-res []
   {:round  (:round   @state)
@@ -98,7 +102,6 @@
   "Update the state after moving a piece"
   [[sx sy] [ex ey] piece]
   (when (and (not= "" (get-in (:board @state) [ex ey]))
-             (not= :? (get-in (:board @state) [ex ey :name]))
              (not= (:color (get-in (:board @state) [sx sy]))
                    (:color (get-in (:board @state) [ex ey]))))
     (update-kill! (get-in (:board @state) [ex ey])))
