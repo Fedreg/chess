@@ -2,6 +2,7 @@
   (:require
    [clojure.test     :refer :all]
    [chess-test.moves :as m]
+   [chess-test.state :as s]
    [chess-test.core  :as c]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -42,13 +43,13 @@
 
 (deftest pawn-test
   (testing "pawn? fn"
-    (is (= true  (m/pawn? [:2 :a] [:3 :a] :white)))
-    (is (= true  (m/pawn? [:2 :a] [:4 :a] :white)))
-    (is (= true  (m/pawn? [:7 :a] [:6 :a] :black)))
-    (is (= false (m/pawn? [:7 :a] [:3 :a] :black)))
-    (is (= false (m/pawn? [:2 :a] [:7 :a] :white)))
-    (is (= false (m/pawn? [:2 :a] [:4 :a] :black)))
-    (is (= false (m/pawn? [:2 :a] [:2 :h] :white)))
+    (is (= true  (m/pawn? [:2 :a] [:3 :a] (:baord @s/state) :white)))
+    (is (= true  (m/pawn? [:2 :a] [:4 :a] (:baord @s/state) :white)))
+    (is (= true  (m/pawn? [:7 :a] [:6 :a] (:baord @s/state) :black)))
+    (is (= false (m/pawn? [:7 :a] [:3 :a] (:baord @s/state) :black)))
+    (is (= false (m/pawn? [:2 :a] [:7 :a] (:baord @s/state) :white)))
+    (is (= false (m/pawn? [:2 :a] [:4 :a] (:baord @s/state) :black)))
+    (is (= false (m/pawn? [:2 :a] [:2 :h] (:baord @s/state) :white)))
     ))
 
 (deftest diagonal-test
@@ -217,8 +218,8 @@
     (is (= nil   (m/blocked?  [:1 :b] [:7 :h] test-board1)))
     (is (= true  (m/straight? [:2 :a] [:4 :a])))
     (is (= true  (m/straight? [:1 :a] [:7 :a])))
-    (is (= true  (m/pawn?     [:2 :a] [:3 :a] :white)))
-    (is (= false (m/pawn?     [:2 :a] [:2 :b] :white)))
+    (is (= true  (m/pawn?     [:2 :a] [:3 :a] (:baord @s/state) :white)))
+    (is (= false (m/pawn?     [:2 :a] [:2 :b] (:baord @s/state) :white)))
     (is (= nil   (m/blocked?  [:2 :a] [:4 :a] test-board1)))
     (is (= true  (m/el?       [:8 :c] [:6 :d])))
     (is (= true  (m/blocked?  [:8 :c] [:6 :d] test-board1)))

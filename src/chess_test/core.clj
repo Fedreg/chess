@@ -37,25 +37,12 @@
 (defn board [req]
   (-> @s/state v/page page/html5))
 
-(defn move2 [xy]
-  (let [row [:a :b :c :d :e :f :g :h]
-        sx  (keyword (subs xy 0 1))
-        ex  (keyword (subs xy 2 3))
-        sy  (->> (subs xy 1 2) Integer/parseInt (nth row) keyword)
-        ey  (->> (subs xy 3 4) Integer/parseInt (nth row) keyword)
-        res (m/move [sx sy] [ex ey] s/state)]
-    (if (not= :illegal res)
-      (-> @s/state v/page page/html5)
-      "illegal")))
-
 (defn move [xy]
-  (let [row [:a :b :c :d :e :f :g :h]
-        x  (keyword (subs xy 0 1))
-        y  (->> (subs xy 1 2) Integer/parseInt (nth row) keyword)
-        res (m/move [x y] s/state)]
-    (if (not= :illegal res)
-      (-> @s/state v/page page/html5)
-      "illegal")))
+  (let [row     [:a :b :c :d :e :f :g :h]
+        x      (keyword (subs xy 0 1))
+        y      (->> (subs xy 1 2) Integer/parseInt (nth row) keyword)
+        res     (m/move [x y] s/state)]
+    (-> @s/state v/page page/html5)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Routing
@@ -68,7 +55,6 @@
     (cmpj/GET "/start"               []   start-game)
     (cmpj/GET "/display-board"       []   board)
     (cmpj/GET "/move"                [xy] (move xy))
-    (cmpj/GET "/move2"               [xy] (move2 xy))
     (cmpj/ANY "/js/chess-scripts.js" []   (slurp "resources/public/js/chess-scripts.js"))
     (route/not-found                 not-found-page)))
    :access-control-allow-origin [#".*"]
@@ -84,7 +70,7 @@
 
 (comment
 
-  (m/move [:2 :a] [ :4 :a] s/state)
+  (m/move [:2 :a] [ :4 :a] @s/state)
   (s/new-game!)
   (-main)
 
@@ -104,3 +90,4 @@
 ;; Consolidate move & move-start
 ;; Factor out updates in update-fns
 ;; Pass state around consistently.  Either pass it always, never pass it (i.e. subscriptions)
+

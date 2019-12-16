@@ -25,11 +25,7 @@
   [row data]
   (let [base  (map-indexed
                (fn [idx [k v]]
-                 (let [name      (:name     v)
-                       clicked?  (:clicked? v)
-                       possible? (:possible? v)
-                       color     (:color    v)]
-                   (square row idx name color clicked? possible?)))
+                   (square row idx v))
                (get-in data [(-> row str keyword)]))
         final (reduce (fn [acc v] (conj acc v))
                       [:div square-row-style]
@@ -40,12 +36,11 @@
 ;; Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn square-style [row n color name clicked? possible?]
+(defn square-style [row n {:keys [color name clicked? possible? illegal?]}]
   (style
    {:box-sizing       "border-box"
     :color            (cond 
                         clicked?         "#ddd"
-                        possible?        "#fff"
                         (= :black color) "#0c60f0"
                         :else            "#ddd")
     :width            "60px"
@@ -54,8 +49,9 @@
     :margin           "6px 6px 0 0"
     :padding          "20px 25px"
     :background-color (cond
-                        clicked?                    "#0c60f0"
-                        possible?                   "#0c60f0"
+                        clicked?                    "green";"#0c60f0"
+                        possible?                   "green" ;"#0c60f0"
+                        illegal?                    "red"
                         (and (odd?  row) (odd?  n)) "#222"
                         (and (even? row) (even? n)) "#222"
                         :else                       "#333")}))
@@ -102,15 +98,15 @@
 
 (defn square
   "View for each square of the board"
-  [row n name color clicked? possible?]
+  [row n piece]
   (let [id  (str "div#" row n)
         div (keyword id)]
   [div
    (assoc
-    (square-style row n color name clicked? possible?)
+    (square-style row n piece)
     :onclick
     "selectSquare(this);")
-   name]))
+   (:name piece)]))
 
 (def file-row
   "In chess, the horizontal rows are called 'file'"

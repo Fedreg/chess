@@ -6,14 +6,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def init
-  {:board        b/blank-board
-   :round        1
-   :kills        {:white []
-                  :black []}
-   :points       {:white 0
-                  :black 0}
-   :current-move []
-   :history      {}})
+  {:board         b/blank-board
+   :round         1
+   :kills         {:white []
+                   :black []}
+   :points        {:white 0
+                   :black 0}
+   :current-move  []
+   :illegal-moves []
+   :history       {}})
 
 (def state (atom init))
 
@@ -78,6 +79,20 @@
                       (update-in [:kills  col] conj (:name piece))
                       (update-in [:points col] + (:value piece))))))
 
+(defn clear-illegal-moves
+  ([]
+   (clear-illegal-moves (:illegal-moves @state)))
+  ([illegal-moves]
+   (mapv
+    (fn [[x y]]
+      (swap! state #(-> %
+                        (assoc-in [:board x y :illegal?] false)
+                        (assoc-in [:illegal-moves] (filterv
+                                                    (fn [im]
+                                                      (not= im [x y]))
+                                                    (:illegal-moves @state))))))
+    illegal-moves)))
+
 (defn update-possible-moves
   "Adds or removes the :possible? tag from the board"
   [x y action]
@@ -120,9 +135,10 @@
   "Update the state after clicking the piece to move.  Shows possible moves. Move not complete until end location clicked (..which calls update-move!)"
   [x y possible-moves]
   (swap! state #(-> %
-                 (update-in [:current-move] conj [x y])
-                 (assoc-in  [:possible-moves] possible-moves)
-                 (assoc-in  [:board x y :clicked?] true)))
+                    (update-in [:current-move] conj x y)
+                    (assoc-in  [:possible-moves] possible-moves)
+                    (assoc-in  [:board x y :clicked?] true)))
+  (clear-illegal-moves)
   (update-possible-moves x y :add)
   (move-res))
 
@@ -138,6 +154,16 @@
   (when (get-in @state [:board x y :clicked?])
     (swap! state #(assoc-in % [:board x y :clicked?] false)))
   (move-res))
+
+(defn update-illegal-move!
+  "When a move is illegal the piece will be marked red"
+  [x y]
+  (prn "ILLEGAL" x y)
+  (if (not-empty (filter #(= [x y] %) (:illegal-moves @state)))
+    (clear-illegal-moves [[x y]])
+    (swap! state #(-> %
+                      (assoc-in [:board x y :illegal?] true)
+                      (update-in [:illegal-moves] conj [x y])))))
 
 (comment
   (new-game!)
