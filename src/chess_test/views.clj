@@ -87,7 +87,7 @@
   (style
    {:background-color "#222"}))
 
-(defn turn-style [round]
+(defn turn-style []
   (style
    {:color "#fff"
     :font-size "20px"}))
@@ -145,7 +145,15 @@
 (defn turn
   "Displays whose turn it is"
   [round]
-  [:div (turn-style round) [:div round] [:div (if (odd? round) :white :black)]])
+  [:div (turn-style) [:div "ROUND " round] [:div (if (odd? round) :white :black)]])
+
+(defn points 
+  "Displays points per side"
+  [points]
+  [:div (turn-style)
+   [:div "POINTS: "
+    [:span "WHITE: " (:white points)]
+    [:span ", BLACK: " (:black points)]]])
 
 (defn page
   "Main page view"
@@ -155,5 +163,6 @@
     (page/include-js "js/chess-scripts.js")]
    [:body body-style
     [:div#body page-style
-     (board (:board data))
-     (turn  (:round data))]]))
+     (board  (:board  data))
+     (points (:points data))
+     (turn   (:round  data))]]))

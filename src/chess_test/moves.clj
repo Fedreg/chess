@@ -8,7 +8,7 @@
 (def rank [:1 :2 :3 :4 :5 :6 :7 :8])
 (def file [:a :b :c :d :e :f :g :h])
 
-(defn diff [a b]
+(defn -diff [a b]
   (if (> a b) (- a b) (- b a)))
 
 (defn ior
@@ -19,7 +19,7 @@
 (defn ior-diff
   "indexOf rank diff"
   [sx ex]
-  (diff (ior sx) (ior ex)))
+  (-diff (ior sx) (ior ex)))
 
 (defn iof
   "indexOf file"
@@ -29,7 +29,7 @@
 (defn iof-diff
   "indexOf file diff"
   [sy ey]
-  (diff (iof sy) (iof ey)))
+  (-diff (iof sy) (iof ey)))
 
 (defn pawn-attack?
   "Unlike other pieces, pawns attack differently from their move; this caluclates their attack"
@@ -90,8 +90,8 @@
   [[sx sy] [ex ey]]
   (and (not= sx ex)
        (not= sy ey)
-       (= 1 (diff (ior-diff sx ex)
-                  (iof-diff sy ey)))))
+       (= 1 (-diff (ior-diff sx ex)
+                   (iof-diff sy ey)))))
 
 (defn multi? [[sx sy] [ex ey]]
   (or (straight? [sx sy] [ex ey])
@@ -185,7 +185,7 @@
         piece-col   (:color piece)
         e-piece-col (:color e-piece)
         same-color? (and (= piece-col e-piece-col)
-                         (not= true (:possible? e-piece)))
+                         (= false (:possible? e-piece)))
         block       (cond
                       (el? [sx sy] [ex ey])
                       (when same-color? true)
@@ -199,8 +199,6 @@
                       :else
                       (x-y-loop [sx sy] [ex ey] board))]
     block))
-
-;; (blocked? [:1 :g] [:3 :f] (:board @s/state))
 
 (defn turn?
   "is it the color's turn to move"
@@ -235,12 +233,10 @@
     :pawn     (and max? (pawn?     [sx sy] [ex ey] board color))
     false))
 
-;; (valid-move? [:5 :d] [:4 :e] {:dir :pawn :max? true :color :black :board (:board @s/state)})
-
 (defn possible-moves
   "Determines all the possible moves for a given piece"
-  [x y state]
-  (let [piece (get-in state [:board x y])
+  [[x y] state]
+  (let [piece (get-in @state [:board x y])
         max   (:max piece)
         arr   []]
     (apply concat
@@ -251,16 +247,17 @@
                                              [ex ey]
                                              {:dir   (:direction piece)
                                               :color (:color piece)
-                                              :board (:board state)
+                                              :board (:board @state)
                                               :max?  (and max
                                                           (>= max (ior-diff x ex))
                                                           (>= max (iof-diff y ey)))})
-                                (let [e-piece (get-in (:board state) [ex ey])]
+                                (let [e-piece (get-in (:board @state) [ex ey])]
                                   (and (or (= "" e-piece)
                                            (:possible? e-piece)
-                                           (pawn-attack?  [x y] [ex ey] (:board state))
-                                           (valid-attack? [x y] [ex ey] piece e-piece (:board state)))
-                                       (not (blocked?     [x y] [ex ey] (:board state))))))
+                                           (not (false? (:possible? e-piece)))
+                                           (pawn-attack?  [x y] [ex ey] (:board @state))
+                                           (valid-attack? [x y] [ex ey] piece e-piece (:board @state)))
+                                       (not (blocked?     [x y] [ex ey] (:board @state))))))
                        (conj arr [ex ey])))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -279,15 +276,19 @@
      (move [sx sy] [ex ey] state)))
   ([[sx sy] [ex ey] state]
     (println "MOVE REQ" [sx sy] "=>" [ex ey])
+    (println "POSSIB" (possible-moves [sx sy] state))
     (cond
+      (= "" (get-in @state [:board sx sy :color]))
+      (s/update-illegal-move! [sx sy])
+
       (not (turn? (:round @state) (get-in @state [:board sx sy :color]))) 
-      (s/update-illegal-move! sx sy)
+      (s/update-illegal-move! [sx sy])
 
       (or (nil? ex) (nil? ey)) 
-      (s/update-move-start! sx sy (possible-moves sx sy @state))
+      (s/update-move-start! [sx sy] (possible-moves [sx sy] state))
 
       (and (= sx ex) (= sy ey))
-      (s/update-noop! ex ey)
+      (s/update-noop! [ex ey])
 
       :else
       (let [board   (:board @state)
@@ -312,7 +313,7 @@
         (println {:free free? :p-kill p-kill? :valid valid? :block block?})
         (if (or (and valid? free?) p-kill?)
           (s/update-move! [sx sy] [ex ey] piece)
-          (s/update-noop! ex ey))))))
+          (s/update-noop! [ex ey]))))))
 
 (comment
   ;; State
@@ -343,3 +344,4 @@
   (:possible-moves @s/state)
 
   :end-comment)
+

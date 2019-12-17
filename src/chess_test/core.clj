@@ -38,10 +38,10 @@
   (-> @s/state v/page page/html5))
 
 (defn move [xy]
-  (let [row     [:a :b :c :d :e :f :g :h]
-        x      (keyword (subs xy 0 1))
-        y      (->> (subs xy 1 2) Integer/parseInt (nth row) keyword)
-        res     (m/move [x y] s/state)]
+  (let [row [:a :b :c :d :e :f :g :h]
+        x   (keyword (subs xy 0 1))
+        y   (->> (subs xy 1 2) Integer/parseInt (nth row) keyword)
+        res (m/move [x y] s/state)]
     (-> @s/state v/page page/html5)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -52,7 +52,7 @@
   (cors/wrap-cors
    (params/wrap-params
    (cmpj/routes
-    (cmpj/GET "/start"               []   start-game)
+    (cmpj/GET "/"                    []   start-game)
     (cmpj/GET "/display-board"       []   board)
     (cmpj/GET "/move"                [xy] (move xy))
     (cmpj/ANY "/js/chess-scripts.js" []   (slurp "resources/public/js/chess-scripts.js"))
@@ -74,8 +74,6 @@
   (s/new-game!)
   (-main)
 
-  (move2 "22")
-
   @(http/get "http://localhost:9000/start")
 
   @(http/get "http://localhost:9000/display-board")
@@ -85,9 +83,6 @@
   :end)
 
 ;; TODO
-;; Possible-moves does not include kills options (including diag kills for pawns)
-;; Clean up JS if condtions and url
-;; Consolidate move & move-start
 ;; Factor out updates in update-fns
 ;; Pass state around consistently.  Either pass it always, never pass it (i.e. subscriptions)
 

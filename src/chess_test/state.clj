@@ -6,15 +6,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def init
-  {:board         b/blank-board
-   :round         1
-   :kills         {:white []
-                   :black []}
-   :points        {:white 0
-                   :black 0}
-   :current-move  []
-   :illegal-moves []
-   :history       {}})
+  {:board          b/blank-board
+   :round          1
+   :kills          {:white []
+                    :black []}
+   :points         {:white 0
+                    :black 0}
+   :possible-moves []
+   :current-move   []
+   :illegal-moves  []
+   :history        {}})
 
 (def state (atom init))
 
@@ -73,7 +74,7 @@
 (defn update-kill!
   "If a piece is taken on a move, add points and kill"
   [piece]
-  (println "KILL!")
+  ;; (println "KILL!")
   (let [col (if (= :white (:color piece)) :black :white)]
     (swap! state #(-> %
                       (update-in [:kills  col] conj (:name piece))
@@ -105,7 +106,11 @@
                                            (assoc p :possible? true)
                                            {:possible? true :color color}))))
               moves)
-        (mapv (fn [[r f]] (swap! state assoc-in [:board r f] "")) moves)))))
+        (mapv (fn [[r f]] (swap! state update-in [:board r f]
+                                 (fn [p] (if (:name p)
+                                           (dissoc p :possible?)
+                                           ""))))
+              moves)))))
 
 (defn move-res []
   {:round  (:round   @state)
@@ -133,7 +138,7 @@
 
 (defn update-move-start!
   "Update the state after clicking the piece to move.  Shows possible moves. Move not complete until end location clicked (..which calls update-move!)"
-  [x y possible-moves]
+  [[x y] possible-moves]
   (swap! state #(-> %
                     (update-in [:current-move] conj x y)
                     (assoc-in  [:possible-moves] possible-moves)
@@ -144,25 +149,34 @@
 
 (defn update-noop!
   "resets the move state if the move-start and move-end are the same piece"
-  [x y]
-  (prn "NO OP!" x y)
+  [[x y]]
+  ;; (prn "NO OP!" x y)
   (update-possible-moves x y :delete)
-  (swap! state #(-> %
-                 (assoc-in [:current-move] [])
-                 (assoc-in [:possible-moves] [])
-                 #_(assoc-in [:board x y :clicked?] false)))
   (when (get-in @state [:board x y :clicked?])
     (swap! state #(assoc-in % [:board x y :clicked?] false)))
+  (when-let [cur (not-empty (:current-move @state))]
+    (swap! state #(assoc-in % [:board
+                               (first cur)
+                               (last cur)
+                               :clicked?]
+                            false)))
+  (swap! state #(-> %
+                 (assoc-in [:current-move]   [])
+                 (assoc-in [:possible-moves] [])))
   (move-res))
 
 (defn update-illegal-move!
   "When a move is illegal the piece will be marked red"
-  [x y]
+  [[x y]]
   (prn "ILLEGAL" x y)
   (if (not-empty (filter #(= [x y] %) (:illegal-moves @state)))
     (clear-illegal-moves [[x y]])
     (swap! state #(-> %
-                      (assoc-in [:board x y :illegal?] true)
+                      (update-in [:board x y]
+                                (fn [p]
+                                  (if (map? p)
+                                           (assoc p :illegal? true)
+                                           {:illegal? true})))
                       (update-in [:illegal-moves] conj [x y])))))
 
 (comment
