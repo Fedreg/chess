@@ -185,7 +185,7 @@
         piece-col   (:color piece)
         e-piece-col (:color e-piece)
         same-color? (and (= piece-col e-piece-col)
-                         (= false (:possible? e-piece)))
+                         (not= true (:possible? e-piece)))
         block       (cond
                       (el? [sx sy] [ex ey])
                       (when same-color? true)
@@ -254,7 +254,6 @@
                                 (let [e-piece (get-in (:board @state) [ex ey])]
                                   (and (or (= "" e-piece)
                                            (:possible? e-piece)
-                                           (not (false? (:possible? e-piece)))
                                            (pawn-attack?  [x y] [ex ey] (:board @state))
                                            (valid-attack? [x y] [ex ey] piece e-piece (:board @state)))
                                        (not (blocked?     [x y] [ex ey] (:board @state))))))
