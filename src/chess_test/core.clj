@@ -37,6 +37,14 @@
 (defn board [req]
   (-> @s/state v/page page/html5))
 
+(defn undo [req]
+  (s/update! {:action :undo})
+  (-> @s/state v/page page/html5))
+
+(defn redo [req]
+  (s/update! {:action :redo})
+  (-> @s/state v/page page/html5))
+
 (defn move [xy]
   (let [row [:a :b :c :d :e :f :g :h]
         x   (keyword (subs xy 0 1))
@@ -53,8 +61,10 @@
    (params/wrap-params
    (cmpj/routes
     (cmpj/GET "/"                    []   start-game)
-    (cmpj/GET "/display-board"       []   board)
     (cmpj/GET "/move"                [xy] (move xy))
+    (cmpj/GET "/undo"                []   undo)
+    (cmpj/GET "/redo"                []   redo)
+    (cmpj/GET "/board"               []   board)
     (cmpj/ANY "/js/chess-scripts.js" []   (slurp "resources/public/js/chess-scripts.js"))
     (route/not-found                 not-found-page)))
    :access-control-allow-origin [#".*"]

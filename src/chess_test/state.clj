@@ -74,7 +74,6 @@
 (defn update-kill!
   "If a piece is taken on a move, add points and kill"
   [piece]
-  ;; (println "KILL!")
   (let [col (if (= :white (:color piece)) :black :white)]
     (swap! state #(-> %
                       (update-in [:kills  col] conj (:name piece))
@@ -118,23 +117,25 @@
    :kills  (:kills   @state)
    :board  (b/->board (:board @state) :display)})
 
-(defn update-move!
+(defn update-move-end!
   "Update the state after moving a piece"
-  [[sx sy] [ex ey] piece]
-  (when (and (not= "" (get-in (:board @state) [ex ey]))
-             (not= (:color (get-in (:board @state) [sx sy]))
-                   (:color (get-in (:board @state) [ex ey]))))
+  [[sx sy] [ex ey]]
+  (let [s-piece (get-in @state [:board sx sy])
+        e-piece (get-in @state [:board ex ey])]
+  (when (and (not= "" e-piece)
+             (not= (:color s-piece)
+                   (:color e-piece)))
     (update-kill! (get-in (:board @state) [ex ey])))
   (update-possible-moves sx sy :delete)
   (swap! state #(-> %
-                    (assoc-in [:board ex ey] (assoc piece :clicked? false))
+                    (assoc-in [:board ex ey] (assoc s-piece :clicked? false))
                     (assoc-in [:board sx sy] "")
-                    (assoc-in [:history (-> (:round @state) str keyword)] (:board @state))
+                    (assoc-in [:history (-> (:round @state) str keyword)] @state)
                     (assoc-in [:current-move] [])
                     (assoc-in [:possible-moves] [])
                     (update-in [:round] inc)))
   (merge (move-res)
-         {:move {:piece (:name piece) :from [sx sy] :to [ex ey]}}))
+         {:move {:piece (:name s-piece) :from [sx sy] :to [ex ey]}})))
 
 (defn update-move-start!
   "Update the state after clicking the piece to move.  Shows possible moves. Move not complete until end location clicked (..which calls update-move!)"
@@ -150,7 +151,6 @@
 (defn update-noop!
   "resets the move state if the move-start and move-end are the same piece"
   [[x y]]
-  ;; (prn "NO OP!" x y)
   (update-possible-moves x y :delete)
   (when (get-in @state [:board x y :clicked?])
     (swap! state #(assoc-in % [:board x y :clicked?] false)))
@@ -168,7 +168,6 @@
 (defn update-illegal-move!
   "When a move is illegal the piece will be marked red"
   [[x y]]
-  (prn "ILLEGAL" x y)
   (if (not-empty (filter #(= [x y] %) (:illegal-moves @state)))
     (clear-illegal-moves [[x y]])
     (swap! state #(-> %
@@ -178,6 +177,36 @@
                                            (assoc p :illegal? true)
                                            {:illegal? true})))
                       (update-in [:illegal-moves] conj [x y])))))
+
+(defn update-undo!
+  "Moves the board back a round"
+  []
+  (let [cur-rnd    (:round @state)
+        past-state (get-in @state [:history (-> cur-rnd dec str keyword)])]
+    (when past-state
+      (reset! state (assoc past-state :history (:history @state))))
+    (move-res)))
+
+(defn update-redo!
+  "Moves the board forward a round"
+  []
+  (let [cur-rnd    (:round @state)
+        next-state (get-in @state [:history (-> cur-rnd inc str keyword)])]
+    (when next-state
+      (reset! state (assoc next-state :history (:history @state))))
+    (move-res)))
+
+(defn update!
+  "Global update fn"
+  [{:keys [action start end possible-moves]}]
+  (prn "UPDATE!" action start end possible-moves)
+  (case action
+    :illegal    (update-illegal-move! start)
+    :noop       (update-noop!         end)
+    :move-start (update-move-start!   start possible-moves)
+    :move-end   (update-move-end!     start end)
+    :undo       (update-undo!)
+    :redo       (update-redo!)))
 
 (comment
   (new-game!)

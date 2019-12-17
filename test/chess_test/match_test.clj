@@ -59,11 +59,15 @@
     (is (= {:white 1 :black 0} (:points @s/state)))
 
     ;; Next black pawn advances
+    (m/move [:7 :d] [nil nil] s/state)
+    (is (= 2 (count (:possible-moves @s/state))))
     (m/move [:7 :d] [:5 :d] s/state)
     (is (= (tb :p [:7 :d] [:5 :d])  (b/->board (:board @s/state) :display)))
     (is (= 5 (:round @s/state)))
 
     ;; White Q kills plack pawn
+    (m/move [:1 :d] [nil nil] s/state)
+    (is (= 4 (count (:possible-moves @s/state))))
     (m/move [:1 :d] [:5 :d] s/state)
     (is (= (tb :Q [:1 :d] [:5 :d])  (b/->board (:board @s/state) :display)))
     (is (= 6 (:round @s/state)))
@@ -72,6 +76,7 @@
 
     ;; Black Q clicks to move then changes mind (noop)
     (m/move [:8 :d] [nil nil] s/state)
+    (is (= 7 (count (:possible-moves @s/state))))
     ;; Unchanged since last time
     (is (= (tb :Q [:1 :d] [:5 :d])  (b/->board (:board @s/state) :display)))
     (m/move [:8 :d] [:8 :d] s/state) ; => noop

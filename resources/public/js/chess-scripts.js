@@ -6,6 +6,8 @@ function loadPage() {
     body.innerHTML = resText;
 }
 
+const baseUrl = "http://localhost:9000/";
+
 const get = (url) => {
     let req = new XMLHttpRequest();
     req.addEventListener("load", loadPage);
@@ -15,9 +17,21 @@ const get = (url) => {
     return res;
 }
 
+function undo() {
+    console.log("UNDO");
+    let url = baseUrl + "undo";
+    get(url);
+}
+    
+function redo() {
+    console.log("REDO");
+    let url = baseUrl + "redo";
+    get(url);
+}
+
 function selectSquare(el) {
     let div = document.getElementById(el.id);
-    let url = "http://localhost:9000/move?xy=";
+    let url = baseUrl + "move?xy=";
     let id = el.id;
     get(url + id);
 }

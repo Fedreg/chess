@@ -1,4 +1,4 @@
-(ns chess-test.moves-test
+(ns chess-test.core-test
   (:require
    [clojure.test     :refer :all]
    [chess-test.moves :as m]

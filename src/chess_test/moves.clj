@@ -274,45 +274,52 @@
          ey      (when end? y)]
      (move [sx sy] [ex ey] state)))
   ([[sx sy] [ex ey] state]
-    (println "MOVE REQ" [sx sy] "=>" [ex ey])
-    (println "POSSIB" (possible-moves [sx sy] state))
-    (cond
-      (= "" (get-in @state [:board sx sy :color]))
-      (s/update-illegal-move! [sx sy])
+   (println "MOVE REQ" [sx sy] "=>" [ex ey])
+   (cond
+     (= "" (get-in @state [:board sx sy :color]))
+     (s/update! {:action :illegal
+                 :start  [sx sy]})
 
-      (not (turn? (:round @state) (get-in @state [:board sx sy :color]))) 
-      (s/update-illegal-move! [sx sy])
+     (not (turn? (:round @state) (get-in @state [:board sx sy :color]))) 
+     (s/update! {:action :illegal
+                 :start  [sx sy]})
 
-      (or (nil? ex) (nil? ey)) 
-      (s/update-move-start! [sx sy] (possible-moves [sx sy] state))
+     (or (nil? ex) (nil? ey)) 
+     (s/update! {:action         :move-start
+                 :start          [sx sy]
+                 :possible-moves (possible-moves [sx sy] state)})
 
-      (and (= sx ex) (= sy ey))
-      (s/update-noop! [ex ey])
+     (and (= sx ex) (= sy ey))
+     (s/update! {:action :noop
+                 :end    [ex ey]})
 
-      :else
-      (let [board   (:board @state)
-            piece   (get-in board [sx sy])
-            color   (:color     piece)
-            e-piece (get-in board [ex ey])
-            dir     (:direction piece)
-            max     (:max       piece)
-            color   (:color     piece)
-            max?    (and max
-                         (>= max (ior-diff sx ex))
-                         (>= max (iof-diff sy ey)))
-            valid?  (valid-move?  [sx sy] [ex ey] {:dir dir :max? max? :color color})
-            p-kill? (pawn-attack? [sx sy] [ex ey] board)
-            block?  (blocked? [sx sy] [ex ey] board)
-            free?   (and (or (= "" e-piece)
-                             (:possible? e-piece)
-                             (if (= :white (:color piece))
-                               (= :black (:color e-piece))
-                               (= :white (:color e-piece))))
-                         (not block?))]
-        (println {:free free? :p-kill p-kill? :valid valid? :block block?})
-        (if (or (and valid? free?) p-kill?)
-          (s/update-move! [sx sy] [ex ey] piece)
-          (s/update-noop! [ex ey]))))))
+     :else
+     (let [board   (:board @state)
+           piece   (get-in board [sx sy])
+           color   (:color     piece)
+           e-piece (get-in board [ex ey])
+           dir     (:direction piece)
+           max     (:max       piece)
+           color   (:color     piece)
+           max?    (and max
+                        (>= max (ior-diff sx ex))
+                        (>= max (iof-diff sy ey)))
+           valid?  (valid-move?  [sx sy] [ex ey] {:dir dir :max? max? :color color})
+           p-kill? (pawn-attack? [sx sy] [ex ey] board)
+           block?  (blocked? [sx sy] [ex ey] board)
+           free?   (and (or (= "" e-piece)
+                            (:possible? e-piece)
+                            (if (= :white (:color piece))
+                              (= :black (:color e-piece))
+                              (= :white (:color e-piece))))
+                        (not block?))]
+       (println {:free free? :p-kill p-kill? :valid valid? :block block?})
+       (if (or (and valid? free?) p-kill?)
+         (s/update! {:action :move-end
+                     :start  [sx sy]
+                     :end    [ex ey]})
+         (s/update! {:action :noop
+                     :end    [ex ey]}))))))
 
 (comment
   ;; State

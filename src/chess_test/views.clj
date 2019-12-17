@@ -92,9 +92,21 @@
    {:color "#fff"
     :font-size "20px"}))
 
+(def button-style
+  (style
+   {:color "#000"
+    :cursor "pointer"}))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Markup
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn undo []
+  [:button {:onclick "undo();"} "UNDO"])
+  
+(defn redo []
+  [:button {:onclick "redo();"} "REDO"])
 
 (defn square
   "View for each square of the board"
@@ -165,4 +177,6 @@
     [:div#body page-style
      (board  (:board  data))
      (points (:points data))
-     (turn   (:round  data))]]))
+     (turn   (:round  data))
+     (undo)
+     (redo)]]))
