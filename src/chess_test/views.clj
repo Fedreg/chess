@@ -39,7 +39,7 @@
 (defn square-style [row n {:keys [color name clicked? possible? illegal?]}]
   (style
    {:box-sizing       "border-box"
-    :color            (cond 
+    :color            (cond
                         clicked?         "#ddd"
                         (= :black color) "#0c60f0"
                         :else            "#ddd")
@@ -104,7 +104,7 @@
 
 (defn undo []
   [:button {:onclick "undo();"} "UNDO"])
-  
+
 (defn redo []
   [:button {:onclick "redo();"} "REDO"])
 
@@ -159,7 +159,7 @@
   [round]
   [:div (turn-style) [:div "ROUND " round] [:div (if (odd? round) :white :black)]])
 
-(defn points 
+(defn points
   "Displays points per side"
   [points]
   [:div (turn-style)

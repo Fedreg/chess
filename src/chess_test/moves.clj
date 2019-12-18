@@ -102,7 +102,7 @@
   [[sx sy] [ex ey] [x y] board]
   (cond
     (true? (get-in board [x y :possible?]))
-    nil 
+    nil
 
     (and (not= [ex ey] [x y])
          (some? (get-in board [x y :color])))
@@ -112,7 +112,7 @@
          (some? (get-in board [x y :color]))
          (not= (get-in board [sx sy :color])
                (get-in board [x y   :color])))
-    nil 
+    nil
 
     (and (= [ex ey] [x y])
          (some? (get-in board [x y :color]))
@@ -179,7 +179,7 @@
 (defn blocked?
   "Is any other piece blocking the movement of piece"
   [[sx sy] [ex ey] board]
-  
+
   (let [piece       (get-in board [sx sy])
         e-piece     (get-in board [ex ey])
         piece-col   (:color piece)
@@ -223,7 +223,7 @@
            :multi     (or (straight? [sx sy] [ex ey])
                           (diagonal? [sx sy] [ex ey]))
            false))))
-        
+
 (defn valid-move? [[sx sy] [ex ey] {:keys [dir max? color board]}]
   (case dir
     :straight (and max? (straight? [sx sy] [ex ey]))
@@ -279,10 +279,10 @@
      (= "" (get-in @state [:board sx sy :color]))
      :illegal
 
-     (not (turn? (:round @state) (get-in @state [:board sx sy :color]))) 
+     (not (turn? (:round @state) (get-in @state [:board sx sy :color])))
      :illegal
 
-     (or (nil? ex) (nil? ey)) 
+     (or (nil? ex) (nil? ey))
      :move-start
 
      (and (= sx ex) (= sy ey))
@@ -349,11 +349,11 @@
      (s/update! {:action :illegal
                  :start  [sx sy]})
 
-     (not (turn? (:round @state) (get-in @state [:board sx sy :color]))) 
+     (not (turn? (:round @state) (get-in @state [:board sx sy :color])))
      (s/update! {:action :illegal
                  :start  [sx sy]})
 
-     (or (nil? ex) (nil? ey)) 
+     (or (nil? ex) (nil? ey))
      (s/update! {:action         :move-start
                  :start          [sx sy]
                  :possible-moves (possible-moves [sx sy] state)})
@@ -419,4 +419,3 @@
   (:possible-moves @s/state)
 
   :end-comment)
-

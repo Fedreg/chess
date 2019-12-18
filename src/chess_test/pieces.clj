@@ -23,4 +23,3 @@
   (if (= "" v) "" (assoc v :color (if (#{:1 :2} k)
                                       :white
                                       :black))))
-
