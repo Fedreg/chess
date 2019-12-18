@@ -12,6 +12,7 @@
    [hiccup.core            :refer :all]
    [hiccup.page            :as page]
 
+   [chess-test.ai          :as ai]
    [chess-test.moves       :as m]
    [chess-test.board       :as b]
    [chess-test.views       :as v]
@@ -45,6 +46,10 @@
   (s/update! {:action :redo})
   (-> @s/state v/page page/html5))
 
+(defn random-move []
+  (ai/random-move 0)
+  (-> @s/state v/page page/html5))
+
 (defn move [xy]
   (let [row [:a :b :c :d :e :f :g :h]
         x   (keyword (subs xy 0 1))
@@ -62,6 +67,7 @@
    (cmpj/routes
     (cmpj/GET "/"                    []   start-game)
     (cmpj/GET "/move"                [xy] (move xy))
+    (cmpj/GET "/random-move"         []   (random-move))
     (cmpj/GET "/undo"                []   undo)
     (cmpj/GET "/redo"                []   redo)
     (cmpj/GET "/board"               []   board)

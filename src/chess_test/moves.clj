@@ -263,7 +263,76 @@
 ;; Main Move Func
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn move
+(defn move-res
+  "Calculate the result of a move before updating the state"
+  ([[x y] state]
+   (let [current (:current-move @state)
+         end?    (not-empty current)
+         sx      (if end? (first current) x)
+         sy      (if end? (last  current) y)
+         ex      (when end? x)
+         ey      (when end? y)]
+     (move-res [sx sy] [ex ey] state)))
+  ([[sx sy] [ex ey] state]
+   ;; (println "MOVE REQ" [sx sy] "=>" [ex ey])
+   (cond
+     (= "" (get-in @state [:board sx sy :color]))
+     :illegal
+
+     (not (turn? (:round @state) (get-in @state [:board sx sy :color]))) 
+     :illegal
+
+     (or (nil? ex) (nil? ey)) 
+     :move-start
+
+     (and (= sx ex) (= sy ey))
+     :noop
+
+     :else
+     (let [board   (:board @state)
+           piece   (get-in board [sx sy])
+           color   (:color     piece)
+           e-piece (get-in board [ex ey])
+           dir     (:direction piece)
+           max     (:max       piece)
+           color   (:color     piece)
+           max?    (and max
+                        (>= max (ior-diff sx ex))
+                        (>= max (iof-diff sy ey)))
+           valid?  (valid-move?  [sx sy] [ex ey] {:dir dir :max? max? :color color})
+           p-kill? (pawn-attack? [sx sy] [ex ey] board)
+           block?  (blocked? [sx sy] [ex ey] board)
+           free?   (and (or (= "" e-piece)
+                            (:possible? e-piece)
+                            (if (= :white (:color piece))
+                              (= :black (:color e-piece))
+                              (= :white (:color e-piece))))
+                        (not block?))]
+       ;; (println {:free free? :p-kill p-kill? :valid valid? :block block?})
+       (if (or (and valid? free?) p-kill?)
+         :move-end
+         :noop)))))
+
+  (defn move
+  "Determines if a move is legal. sx, sy = start x, y;  ex, ey = end x, y"
+  ([[x y] state]
+   (let [current (:current-move @state)
+         end?    (not-empty current)
+         sx      (if end? (first current) x)
+         sy      (if end? (last  current) y)
+         ex      (when end? x)
+         ey      (when end? y)]
+     (move [sx sy] [ex ey] state)))
+    ([[sx sy] [ex ey] state]
+     (let [res (move-res [sx sy] [ex ey] state)]
+       (s/update! (merge
+                   {:action res
+                    :start  [sx sy]
+                    :end    [ex ey]}
+                   (when (= :move-start res)
+                    {:possible-moves (possible-moves [sx sy] state)}))))))
+
+#_(defn move
   "Determines if a move is legal. sx, sy = start x, y;  ex, ey = end x, y"
   ([[x y] state]
    (let [current (:current-move @state)
