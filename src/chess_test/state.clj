@@ -199,7 +199,7 @@
 (defn update!
   "Global update fn"
   [{:keys [action start end possible-moves]}]
-  (prn "UPDATE!" action start end possible-moves)
+  (prn action start end possible-moves)
   (case action
     :illegal    (update-illegal-move! start)
     :noop       (update-noop!         end)

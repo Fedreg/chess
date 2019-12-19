@@ -129,11 +129,13 @@
       (loop [x sx
              y (file (dir (iof sy)))]
         (when (comp (iof y) (iof ey))
-          (if (not= "" (get-in board [x y]))
+          (if (or (not= "" (get-in board [x y]))
+                  (= :a y)
+                  (= :h y))
             (loop-res [sx sy] [ex ey] [x y] board)
             (recur x (file (dir (iof y))))))))
     (catch Exception e
-      (println "ERROR X-LOOP" [sx sy] [ex ey] (.getMessage e))
+      (println "ERROR X-LOOP" [sx sy] [ex ey])
       true)))
 
 (defn y-loop
@@ -146,11 +148,13 @@
              x (rank (dir (ior sx)))]
         (when (and (>= (ior x) 1)
                    (comp (ior x) (ior ex)))
-          (if (not= "" (get-in board [x y]))
+          (if (or (not= "" (get-in board [x y]))
+                  (= :1 x)
+                  (= :8 x))
             (loop-res [sx sy] [ex ey] [x y] board)
             (recur y (rank (dir (ior x))))))))
     (catch Exception e
-      (println "ERROR Y-LOOP" [sx sy] [ex ey] (.getMessage e))
+      (println "ERROR Y-LOOP" [sx sy] [ex ey])
       true)))
 
 (defn x-y-loop
@@ -168,12 +172,14 @@
                    (y-comp (iof y) (iof ey)))
           (if (or (not= "" (get-in board [x y]))
                   (= :a y)
-                  (= :h y))
+                  (= :h y)
+                  (= :1 x)
+                  (= :8 x))
             (loop-res [sx sy] [ex ey] [x y] board)
             (recur (rank (x-dir (ior x)))
                    (file (y-dir (iof y))))))))
     (catch Exception e
-      (println "ERROR X-Y-LOOP" [sx sy] [ex ey] (.getMessage e))
+      (println "ERROR X-Y-LOOP" [sx sy] [ex ey])
       true)))
 
 (defn blocked?
@@ -331,64 +337,6 @@
                     :end    [ex ey]}
                    (when (= :move-start res)
                     {:possible-moves (possible-moves [sx sy] state)}))))))
-
-#_(defn move
-  "Determines if a move is legal. sx, sy = start x, y;  ex, ey = end x, y"
-  ([[x y] state]
-   (let [current (:current-move @state)
-         end?    (not-empty current)
-         sx      (if end? (first current) x)
-         sy      (if end? (last  current) y)
-         ex      (when end? x)
-         ey      (when end? y)]
-     (move [sx sy] [ex ey] state)))
-  ([[sx sy] [ex ey] state]
-   (println "MOVE REQ" [sx sy] "=>" [ex ey])
-   (cond
-     (= "" (get-in @state [:board sx sy :color]))
-     (s/update! {:action :illegal
-                 :start  [sx sy]})
-
-     (not (turn? (:round @state) (get-in @state [:board sx sy :color])))
-     (s/update! {:action :illegal
-                 :start  [sx sy]})
-
-     (or (nil? ex) (nil? ey))
-     (s/update! {:action         :move-start
-                 :start          [sx sy]
-                 :possible-moves (possible-moves [sx sy] state)})
-
-     (and (= sx ex) (= sy ey))
-     (s/update! {:action :noop
-                 :end    [ex ey]})
-
-     :else
-     (let [board   (:board @state)
-           piece   (get-in board [sx sy])
-           color   (:color     piece)
-           e-piece (get-in board [ex ey])
-           dir     (:direction piece)
-           max     (:max       piece)
-           color   (:color     piece)
-           max?    (and max
-                        (>= max (ior-diff sx ex))
-                        (>= max (iof-diff sy ey)))
-           valid?  (valid-move?  [sx sy] [ex ey] {:dir dir :max? max? :color color})
-           p-kill? (pawn-attack? [sx sy] [ex ey] board)
-           block?  (blocked? [sx sy] [ex ey] board)
-           free?   (and (or (= "" e-piece)
-                            (:possible? e-piece)
-                            (if (= :white (:color piece))
-                              (= :black (:color e-piece))
-                              (= :white (:color e-piece))))
-                        (not block?))]
-       (println {:free free? :p-kill p-kill? :valid valid? :block block?})
-       (if (or (and valid? free?) p-kill?)
-         (s/update! {:action :move-end
-                     :start  [sx sy]
-                     :end    [ex ey]})
-         (s/update! {:action :noop
-                     :end    [ex ey]}))))))
 
 (comment
   ;; State

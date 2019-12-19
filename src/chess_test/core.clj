@@ -46,8 +46,13 @@
   (s/update! {:action :redo})
   (-> @s/state v/page page/html5))
 
-(defn random-move []
-  (ai/random-move 0)
+(defn random-move
+  "if auto? flag true, computer plays itself"
+  [auto?]
+  (if-not auto?
+    (when (even? (:round @s/state))
+      (ai/random-move))
+    (ai/random-move))
   (-> @s/state v/page page/html5))
 
 (defn move [xy]
@@ -64,15 +69,15 @@
 (def router
   (cors/wrap-cors
    (params/wrap-params
-   (cmpj/routes
-    (cmpj/GET "/"                    []   start-game)
-    (cmpj/GET "/move"                [xy] (move xy))
-    (cmpj/GET "/random-move"         []   (random-move))
-    (cmpj/GET "/undo"                []   undo)
-    (cmpj/GET "/redo"                []   redo)
-    (cmpj/GET "/board"               []   board)
-    (cmpj/ANY "/js/chess-scripts.js" []   (slurp "resources/public/js/chess-scripts.js"))
-    (route/not-found                 not-found-page)))
+    (cmpj/routes
+     (cmpj/GET "/"                    []     start-game)
+     (cmpj/GET "/move"                [xy]   (move xy))
+     (cmpj/GET "/random-move"         [auto] (random-move auto))
+     (cmpj/GET "/undo"                []     undo)
+     (cmpj/GET "/redo"                []     redo)
+     (cmpj/GET "/board"               []     board)
+     (cmpj/ANY "/js/chess-scripts.js" []     (slurp "resources/public/js/chess-scripts.js"))
+     (route/not-found                 not-found-page)))
    :access-control-allow-origin [#".*"]
    :access-control-allow-methods [:get :post]))
 

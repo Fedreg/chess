@@ -1,6 +1,7 @@
 (ns chess-test.ai
   (:require
    [chess-test.state :as s]
+   [chess-test.board :as b]
    [chess-test.moves :as m]))
 
 (defn get-pieces
@@ -28,10 +29,10 @@
         reverse
         first)))
 
-(defn best-start []
+(defn best-start [color]
   ;; TODO Clean up!!
   "Best piece to move if there is a possible kill. Random if not."
-  (let [pieces   (get-pieces :black)
+  (let [pieces   (get-pieces color)
         options  (reduce (fn [acc p]
                            (conj acc {:start p :pos (m/possible-moves p s/state)}))
                          []
@@ -57,9 +58,11 @@
 
 (defn random-move
   "Basic, lame AI... but it's a start!"
-  [try]
+  [& [try]]
+  (let [try (or try 0)]
   (when (<= try 25)
-    (let [p     (best-start)
+    (let [rnd   (:round @s/state)
+          p     (best-start (if (odd? rnd) :white :black))
           start [(first p) (second p)]
           pos   (m/possible-moves start s/state)]
       (if (not-empty pos)
@@ -67,12 +70,23 @@
           (if (#{:noop :illegal} (m/move-res start end s/state))
             (random-move (inc try))
             (m/move start end s/state)))
-        (random-move (inc try))))))
+        (random-move (inc try)))))))
+
+(defn auto-match
+  "Make the computer play itself"
+  []
+  (random-move)
+  (println "ROUND" (:round @s/state) "SCORE" (:points @s/state))
+  (clojure.pprint/pprint (b/->board (:board @s/state) :display))
+  (Thread/sleep 1000)
+  (auto-match))
 
 (comment
+  (s/new-game!)
   (m/move [:2 :a] [:4 :a] s/state)
   (get-pieces :black)
-  (random-move 0)
+  (random-move)
+  (auto-match)
   (best-start)
 
   :end)

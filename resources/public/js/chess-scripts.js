@@ -21,14 +21,18 @@ function randomMove() {
     get(baseUrl + "random-move");
 }
 
+function autoMatch () {
+    console.log("auto");
+    get(baseUrl + "random-move?auto=true");
+    setTimeout("autoMatch()", 1000);
+}
+
 function undo() {
-    console.log("UNDO");
     let url = baseUrl + "undo";
     get(url);
 }
     
 function redo() {
-    console.log("REDO");
     let url = baseUrl + "redo";
     get(url);
 }
@@ -38,5 +42,5 @@ function selectSquare(el) {
     let url = baseUrl + "move?xy=";
     let id = el.id;
     get(url + id);
-    setTimeout("randomMove()", 2000);
+    setTimeout("randomMove()", 1000);
 }

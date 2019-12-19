@@ -154,6 +154,15 @@
     [:span rank-row-style "1"]]
    file-row])
 
+(defn undo []
+  [:button {:onclick "undo();"} "UNDO"])
+
+(defn redo []
+  [:button {:onclick "redo();"} "REDO"])
+
+(defn auto-match []
+  [:button {:onclick "autoMatch();"} "AUTO MATCH"])
+
 (defn turn
   "Displays whose turn it is"
   [round]
@@ -179,4 +188,5 @@
      (points (:points data))
      (turn   (:round  data))
      (undo)
-     (redo)]]))
+     (redo)
+     (auto-match)]]))
