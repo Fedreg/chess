@@ -12,6 +12,8 @@
                     :black []}
    :points         {:white 0
                     :black 0}
+   :king-pos       {:white [:1 :e] :black [:8 :e]}
+   :check          nil
    :possible-moves []
    :current-move   []
    :illegal-moves  []
@@ -202,9 +204,9 @@
   (prn action start end possible-moves)
   (case action
     :illegal    (update-illegal-move! start)
-    :noop       (update-noop!         end)
-    :move-start (update-move-start!   start possible-moves)
-    :move-end   (update-move-end!     start end)
+    :noop       (update-noop!       end)
+    :move-start (update-move-start! start possible-moves)
+    :move-end   (update-move-end!   start end)
     :undo       (update-undo!)
     :redo       (update-redo!)))
 
@@ -220,4 +222,12 @@
 
   (update-in {:dog 0} [:dog] + 6)
 
+  ;; TODO
+  ;; Need to move move-res logic into state
+  ;; Separate check? fn that can always check if any king is in check after each move
+  ;; For checki...
+  ;; WHen a piece gets in check we should add a :check key to the state with the checker and the king in check
+  ;; Then after each move we should check the 'check-res' from the checker to the checkee to see if he's still in check.
+  ;; Moves should be illegal if the check is not broken
+  
   :end-comment)

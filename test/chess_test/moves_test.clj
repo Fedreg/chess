@@ -1,4 +1,4 @@
-(ns chess-test.core-test
+(ns chess-test.moves-test
   (:require
    [clojure.test     :refer :all]
    [chess-test.moves :as m]
@@ -41,16 +41,6 @@
     (is (= false (m/straight? [:1 :a] [:2 :h])))
     ))
 
-(deftest pawn-test
-  (testing "pawn? fn"
-    (is (= true  (m/pawn? [:2 :a] [:3 :a] (:baord @s/state) :white)))
-    (is (= true  (m/pawn? [:2 :a] [:4 :a] (:baord @s/state) :white)))
-    (is (= true  (m/pawn? [:7 :a] [:6 :a] (:baord @s/state) :black)))
-    (is (= false (m/pawn? [:7 :a] [:3 :a] (:baord @s/state) :black)))
-    (is (= false (m/pawn? [:2 :a] [:7 :a] (:baord @s/state) :white)))
-    (is (= false (m/pawn? [:2 :a] [:4 :a] (:baord @s/state) :black)))
-    (is (= false (m/pawn? [:2 :a] [:2 :h] (:baord @s/state) :white)))
-    ))
 
 (deftest diagonal-test
   (testing "diagonal? fn"
@@ -180,6 +170,16 @@
    :2 {:a "" :b "" :c "" :d "" :e "" :f "" :g "" :h ""}
    :1 {:a w-queen :b "" :c "" :d "" :e "" :f "" :g "" :h ""}})
 
+(deftest pawn-test
+  (testing "pawn? fn"
+    (is (= true  (m/pawn? [:2 :a] [:3 :a] (assoc-in test-board4 [:2 :a] w-pawn))))
+    (is (= true  (m/pawn? [:2 :a] [:4 :a] (assoc-in test-board4 [:2 :a] w-pawn))))
+    (is (= true  (m/pawn? [:7 :a] [:6 :a] (assoc-in test-board4 [:7 :a] b-pawn))))
+    (is (= false (m/pawn? [:7 :a] [:3 :a] (assoc-in test-board4 [:7 :a] b-pawn))))
+    (is (= false (m/pawn? [:2 :a] [:7 :a] (assoc-in test-board4 [:2 :a] w-pawn))))
+    (is (= false (m/pawn? [:2 :a] [:2 :h] (assoc-in test-board4 [:2 :a] w-pawn))))
+    ))
+
 (deftest x-loop-test
   (testing "x-loop fn"
     (is (= nil (m/x-loop [:1 :a] [:1 :g] test-board3)))
@@ -214,14 +214,8 @@
 
 (deftest blocked-test
   (testing "blocked? fn"
-    (is (= true  (m/diagonal? [:1 :b] [:7 :h])))
     (is (= nil   (m/blocked?  [:1 :b] [:7 :h] test-board1)))
-    (is (= true  (m/straight? [:2 :a] [:4 :a])))
-    (is (= true  (m/straight? [:1 :a] [:7 :a])))
-    (is (= true  (m/pawn?     [:2 :a] [:3 :a] (:baord @s/state) :white)))
-    (is (= false (m/pawn?     [:2 :a] [:2 :b] (:baord @s/state) :white)))
     (is (= nil   (m/blocked?  [:2 :a] [:4 :a] test-board1)))
-    (is (= true  (m/el?       [:8 :c] [:6 :d])))
     (is (= true  (m/blocked?  [:8 :c] [:6 :d] test-board1)))
     (is (= nil   (m/blocked?  [:8 :c] [:6 :b] test-board1)))
     (is (= true  (m/blocked?  [:1 :d] [:2 :c] test-board2)))

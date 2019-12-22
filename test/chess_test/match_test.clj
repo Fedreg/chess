@@ -82,5 +82,3 @@
     (m/move [:8 :d] [:8 :d] s/state) ; => noop
     (is (= (tb :Q [:1 :d] [:5 :d])  (b/->board (:board @s/state) :display)))
     ))
-
-(:possile-move @s/state)

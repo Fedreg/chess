@@ -48,34 +48,35 @@
 
 (defn pawn?
   "Is move a stright pawn move?"
-  [[sx sy] [ex ey] board color]
-  (and (not= sx ex)
+  [[sx sy] [ex ey] board]
+  (let [color (get-in board [sx sy :color])]
+    (and (not= sx ex)
          (or (pawn-attack? [sx sy] [ex ey] board)
-       (= sy ey))
-       (if (= :white color)
-         (> (ior ex) (ior sx))
-         (< (ior ex) (ior sx)))
-       (cond
-         (pawn-attack? [sx sy] [ex ey] board)
-         true
+             (= sy ey))
+         (if (= :white color)
+           (> (ior ex) (ior sx))
+           (< (ior ex) (ior sx)))
+         (cond
+           (pawn-attack? [sx sy] [ex ey] board)
+           true
 
-         (and (= sx :2)
-              (= :white color))
-         (<= (ior-diff sx ex) 2)
+           (and (= sx :2)
+                (= :white color))
+           (<= (ior-diff sx ex) 2)
 
-         (and (not= sx :2)
-              (= :white color))
-         (<= (ior-diff sx ex) 1)
+           (and (not= sx :2)
+                (= :white color))
+           (<= (ior-diff sx ex) 1)
 
-         (and (= sx :7)
-              (= :black color))
-         (<= (ior-diff sx ex) 2)
+           (and (= sx :7)
+                (= :black color))
+           (<= (ior-diff sx ex) 2)
 
-         (and (not= sx :2)
-              (= :black color))
-         (<= (ior-diff sx ex) 1)
+           (and (not= sx :2)
+                (= :black color))
+           (<= (ior-diff sx ex) 1)
 
-         :else false)))
+           :else false))))
 
 (defn diagonal?
   "Is move a diagonal move? .i.e. bishop"
@@ -185,7 +186,6 @@
 (defn blocked?
   "Is any other piece blocking the movement of piece"
   [[sx sy] [ex ey] board]
-
   (let [piece       (get-in board [sx sy])
         e-piece     (get-in board [ex ey])
         piece-col   (:color piece)
@@ -216,9 +216,11 @@
 
 (defn valid-attack?
   "Can the attacking piece legally complete the kill?"
-  [[sx sy] [ex ey] piece e-piece board]
-  (let [attack-mode (:attack piece)
-        attack-color (:color piece)
+  [[sx sy] [ex ey] board]
+  (let [s-piece (get-in board [sx sy])
+        e-piece (get-in board [ex ey])
+        attack-mode (:attack s-piece)
+        attack-color (:color s-piece)
         victim-color (:color e-piece)]
     (and (not= attack-color victim-color)
          (case attack-mode
@@ -230,19 +232,31 @@
                           (diagonal? [sx sy] [ex ey]))
            false))))
 
-(defn valid-move? [[sx sy] [ex ey] {:keys [dir max? color board]}]
+(defn limit?
+  "Determines if a move is within the max allowance"
+  [[sx sy] [ex ey] board]
+  (let [max (get-in board [sx sy :max])]
+    (and max
+         (>= max (ior-diff sx ex))
+         (>= max (iof-diff sy ey)))))
+
+(defn valid-move? [[sx sy] [ex ey] board]
+  (let [piece (get-in board [sx sy])
+        dir   (:direction piece)
+        col   (:color     piece)
+        max?  (limit? [sx sy] [ex ey] board)]
   (case dir
     :straight (and max? (straight? [sx sy] [ex ey]))
     :diagonal (and max? (diagonal? [sx sy] [ex ey]))
     :el       (and max? (el?       [sx sy] [ex ey]))
     :multi    (and max? (multi?    [sx sy] [ex ey]))
-    :pawn     (and max? (pawn?     [sx sy] [ex ey] board color))
-    false))
+    :pawn     (and max? (pawn?     [sx sy] [ex ey] board))
+    false)))
 
 (defn possible-moves
   "Determines all the possible moves for a given piece"
-  [[x y] state]
-  (let [piece (get-in @state [:board x y])
+  [[x y] board]
+  (let [piece (get-in board [x y])
         max   (:max piece)
         arr   []]
     (apply concat
@@ -251,19 +265,28 @@
                          ey [:a :b :c :d :e :f :g :h]]
                      (when (and (valid-move? [x  y]
                                              [ex ey]
-                                             {:dir   (:direction piece)
-                                              :color (:color piece)
-                                              :board (:board @state)
-                                              :max?  (and max
-                                                          (>= max (ior-diff x ex))
-                                                          (>= max (iof-diff y ey)))})
-                                (let [e-piece (get-in (:board @state) [ex ey])]
+                                             board)
+                                (let [e-piece (get-in board [ex ey])]
                                   (and (or (= "" e-piece)
                                            (:possible? e-piece)
-                                           (pawn-attack?  [x y] [ex ey] (:board @state))
-                                           (valid-attack? [x y] [ex ey] piece e-piece (:board @state)))
-                                       (not (blocked?     [x y] [ex ey] (:board @state))))))
+                                           (pawn-attack?  [x y] [ex ey] board)
+                                           (valid-attack? [x y] [ex ey] board))
+                                       (not (blocked?     [x y] [ex ey] board)))))
                        (conj arr [ex ey])))))))
+
+
+(defn free-move?
+  "Is the space the piece is moving to free"
+  [[sx sy] [ex ey] board]
+  (let [s-piece (get-in board [sx sy])
+        e-piece (get-in board [ex ey])
+        block?  (blocked? [sx sy] [ex ey] board)]
+    (and (or (= "" e-piece)
+             (:possible? e-piece)
+             (if (= :white (:color s-piece))
+               (= :black (:color e-piece))
+               (= :white (:color e-piece))))
+         (not block?))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Main Move Func
@@ -271,55 +294,33 @@
 
 (defn move-res
   "Calculate the result of a move before updating the state"
-  ([[x y] state]
-   (let [current (:current-move @state)
-         end?    (not-empty current)
-         sx      (if end? (first current) x)
-         sy      (if end? (last  current) y)
-         ex      (when end? x)
-         ey      (when end? y)]
-     (move-res [sx sy] [ex ey] state)))
-  ([[sx sy] [ex ey] state]
+  [[sx sy] [ex ey] state]
    ;; (println "MOVE REQ" [sx sy] "=>" [ex ey])
    (cond
-     (= "" (get-in @state [:board sx sy :color]))
-     :illegal
-
      (not (turn? (:round @state) (get-in @state [:board sx sy :color])))
      :illegal
 
-     (or (nil? ex) (nil? ey))
-     :move-start
+     (= "" (get-in @state [:board sx sy]))
+     :illegal
 
      (and (= sx ex) (= sy ey))
      :noop
 
+     (or (nil? ex) (nil? ey))
+     :move-start
+
      :else
      (let [board   (:board @state)
-           piece   (get-in board [sx sy])
-           color   (:color     piece)
-           e-piece (get-in board [ex ey])
-           dir     (:direction piece)
-           max     (:max       piece)
-           color   (:color     piece)
-           max?    (and max
-                        (>= max (ior-diff sx ex))
-                        (>= max (iof-diff sy ey)))
-           valid?  (valid-move?  [sx sy] [ex ey] {:dir dir :max? max? :color color})
+           max?    (limit?       [sx sy] [ex ey] board)
+           valid?  (valid-move?  [sx sy] [ex ey] board)
            p-kill? (pawn-attack? [sx sy] [ex ey] board)
-           block?  (blocked? [sx sy] [ex ey] board)
-           free?   (and (or (= "" e-piece)
-                            (:possible? e-piece)
-                            (if (= :white (:color piece))
-                              (= :black (:color e-piece))
-                              (= :white (:color e-piece))))
-                        (not block?))]
-       ;; (println {:free free? :p-kill p-kill? :valid valid? :block block?})
+           block?  (blocked?     [sx sy] [ex ey] board)
+           free?   (free-move?   [sx sy] [ex ey] board)]
        (if (or (and valid? free?) p-kill?)
          :move-end
-         :noop)))))
+         :noop))))
 
-  (defn move
+(defn move
   "Determines if a move is legal. sx, sy = start x, y;  ex, ey = end x, y"
   ([[x y] state]
    (let [current (:current-move @state)
@@ -329,14 +330,15 @@
          ex      (when end? x)
          ey      (when end? y)]
      (move [sx sy] [ex ey] state)))
-    ([[sx sy] [ex ey] state]
-     (let [res (move-res [sx sy] [ex ey] state)]
-       (s/update! (merge
-                   {:action res
-                    :start  [sx sy]
-                    :end    [ex ey]}
-                   (when (= :move-start res)
-                    {:possible-moves (possible-moves [sx sy] state)}))))))
+  ([[sx sy] [ex ey] state]
+   (let [res   (move-res [sx sy] [ex ey] state)
+         board (:board @state)]
+     (s/update! (merge
+                 {:action res
+                  :start  [sx sy]
+                  :end    [ex ey]}
+                 (when (= :move-start res)
+                   {:possible-moves (possible-moves [sx sy] board)}))))))
 
 (comment
   ;; State

@@ -36,25 +36,27 @@
 ;; Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn square-style [row n {:keys [color name clicked? possible? illegal?]}]
+(defn square-style [row n {:keys [color name clicked? possible? illegal? check?]}]
   (style
    {:box-sizing       "border-box"
     :color            (cond
-                        clicked?         "#ddd"
+                        clicked?         "#fff"
+                        check?           "red"
                         (= :black color) "#0c60f0"
-                        :else            "#ddd")
+                        :else            "#000")
     :width            "60px"
     :height           "60px"
     :border           "1px solid #0c60f0"
     :margin           "6px 6px 0 0"
     :padding          "20px 25px"
     :background-color (cond
-                        clicked?                    "green";"#0c60f0"
-                        possible?                   "green" ;"#0c60f0"
+                        clicked?                    "deeppink"
+                        possible?                   "deeppink"
+                        check?                      "purple"
                         illegal?                    "red"
-                        (and (odd?  row) (odd?  n)) "#222"
-                        (and (even? row) (even? n)) "#222"
-                        :else                       "#333")}))
+                        (and (odd?  row) (odd?  n)) "#eee" ;"#eee"
+                        (and (even? row) (even? n)) "#eee"
+                        :else                       "#bbb")}))
 
 (def square-row-style
   (style
@@ -68,28 +70,27 @@
 
 (def file-row-style
   (style
-   {:color "#555"
+   {:color "#ddd"
     :padding "10px 29px"}))
 
 (def rank-row-style
   (style
-   {:color "#555"
+   {:color "#fff"
     :padding "22px 10px"}))
 
 (def page-style
   (style
    {:height           "100%"
-    ;; :width            "100%"
-    ;; :margin           "100px"
-    :background-color "#222"}))
+    :background-color "#fff"}))
 
 (def body-style
   (style
-   {:background-color "#222"}))
+   {:background-color "#fff"
+    :margin           "150px 25%"}))
 
 (defn turn-style []
   (style
-   {:color "#fff"
+   {:color "#777"
     :font-size "20px"}))
 
 (def button-style
@@ -168,6 +169,11 @@
   [round]
   [:div (turn-style) [:div "ROUND " round] [:div (if (odd? round) :white :black)]])
 
+(defn check 
+  "Displays whose turn it is"
+  [check]
+  [:div (turn-style) [:div "CHEK" check]])
+
 (defn points
   "Displays points per side"
   [points]
@@ -187,6 +193,7 @@
      (board  (:board  data))
      (points (:points data))
      (turn   (:round  data))
+     (check  (:check  data))
      (undo)
      (redo)
      (auto-match)]]))
