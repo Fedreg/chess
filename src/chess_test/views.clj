@@ -169,11 +169,6 @@
   [round]
   [:div (turn-style) [:div "ROUND " round] [:div (if (odd? round) :white :black)]])
 
-(defn check 
-  "Displays whose turn it is"
-  [check]
-  [:div (turn-style) [:div "CHEK" check]])
-
 (defn points
   "Displays points per side"
   [points]
@@ -193,7 +188,6 @@
      (board  (:board  data))
      (points (:points data))
      (turn   (:round  data))
-     (check  (:check  data))
      (undo)
      (redo)
      (auto-match)]]))
