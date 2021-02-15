@@ -12,6 +12,8 @@
                     :black []}
    :points         {:white 0
                     :black 0}
+   :king-pos       {:white [:1 :e] :black [:8 :e]}
+   :check          nil
    :possible-moves []
    :current-move   []
    :illegal-moves  []
@@ -60,18 +62,16 @@
                              :g p/knight,
                              :h p/rook})
                   (b/->board :colorize))]
-    (swap! state assoc-in [:board] board))
-  #_{:round (:round @state)
-   :board (b/->board (:board @state) :display)})
+    (swap! state assoc-in [:board] board)))
 
-(defn update-piece!
+(defn piece!
   "Update the state after moving a piece (non kill)"
   [[sx sy] [ex ey] piece]
   (swap! state #(-> %
                     (assoc-in [:board ex ey] piece)
                     (assoc-in [:board sx sy] ""))))
 
-(defn update-kill!
+(defn kill!
   "If a piece is taken on a move, add points and kill"
   [piece]
   (let [col (if (= :white (:color piece)) :black :white)]
@@ -93,7 +93,7 @@
                                                     (:illegal-moves @state))))))
     illegal-moves)))
 
-(defn update-possible-moves
+(defn possible-moves
   "Adds or removes the :possible? tag from the board"
   [x y action]
   (let [color (get-in @state [:board x y :color])
@@ -117,7 +117,7 @@
    :kills  (:kills   @state)
    :board  (b/->board (:board @state) :display)})
 
-(defn update-move-end!
+(defn move-end!
   "Update the state after moving a piece"
   [[sx sy] [ex ey]]
   (let [s-piece (get-in @state [:board sx sy])
@@ -125,33 +125,33 @@
   (when (and (not= "" e-piece)
              (not= (:color s-piece)
                    (:color e-piece)))
-    (update-kill! (get-in (:board @state) [ex ey])))
-  (update-possible-moves sx sy :delete)
+    (kill! (get-in (:board @state) [ex ey])))
+  (possible-moves sx sy :delete)
   (swap! state #(-> %
                     (assoc-in [:board ex ey] (assoc s-piece :clicked? false))
                     (assoc-in [:board sx sy] "")
-                    (assoc-in [:history (-> (:round @state) str keyword)] @state)
                     (assoc-in [:current-move] [])
                     (assoc-in [:possible-moves] [])
                     (update-in [:round] inc)))
+  (swap! state #(assoc-in % [:history (-> (:round @state) str keyword)] (dissoc @state :history)))
   (merge (move-res)
          {:move {:piece (:name s-piece) :from [sx sy] :to [ex ey]}})))
 
-(defn update-move-start!
-  "Update the state after clicking the piece to move.  Shows possible moves. Move not complete until end location clicked (..which calls update-move!)"
-  [[x y] possible-moves]
+(defn move-start!
+  "Update the state after clicking the piece to move.  Shows possible moves. Move not complete until end location clicked (..which calls move!)"
+  [[x y] moves]
   (swap! state #(-> %
                     (update-in [:current-move] conj x y)
-                    (assoc-in  [:possible-moves] possible-moves)
+                    (assoc-in  [:possible-moves] moves)
                     (assoc-in  [:board x y :clicked?] true)))
   (clear-illegal-moves)
-  (update-possible-moves x y :add)
+  (possible-moves x y :add)
   (move-res))
 
-(defn update-noop!
+(defn noop!
   "resets the move state if the move-start and move-end are the same piece"
   [[x y]]
-  (update-possible-moves x y :delete)
+  (possible-moves x y :delete)
   (when (get-in @state [:board x y :clicked?])
     (swap! state #(assoc-in % [:board x y :clicked?] false)))
   (when-let [cur (not-empty (:current-move @state))]
@@ -161,11 +161,11 @@
                                :clicked?]
                             false)))
   (swap! state #(-> %
-                 (assoc-in [:current-move]   [])
-                 (assoc-in [:possible-moves] [])))
+                    (assoc-in [:current-move]   [])
+                    (assoc-in [:possible-moves] [])))
   (move-res))
 
-(defn update-illegal-move!
+(defn illegal-move!
   "When a move is illegal the piece will be marked red"
   [[x y]]
   (if (not-empty (filter #(= [x y] %) (:illegal-moves @state)))
@@ -176,9 +176,10 @@
                                   (if (map? p)
                                            (assoc p :illegal? true)
                                            {:illegal? true})))
-                      (update-in [:illegal-moves] conj [x y])))))
+                      (update-in [:illegal-moves] conj [x y]))))
+  (move-res))
 
-(defn update-undo!
+(defn undo!
   "Moves the board back a round"
   []
   (let [cur-rnd    (:round @state)
@@ -187,7 +188,7 @@
       (reset! state (assoc past-state :history (:history @state))))
     (move-res)))
 
-(defn update-redo!
+(defn redo!
   "Moves the board forward a round"
   []
   (let [cur-rnd    (:round @state)
@@ -199,25 +200,30 @@
 (defn update!
   "Global update fn"
   [{:keys [action start end possible-moves]}]
-  (prn "UPDATE!" action start end possible-moves)
+  (prn action start end possible-moves)
   (case action
-    :illegal    (update-illegal-move! start)
-    :noop       (update-noop!         end)
-    :move-start (update-move-start!   start possible-moves)
-    :move-end   (update-move-end!     start end)
-    :undo       (update-undo!)
-    :redo       (update-redo!)))
+    :illegal    (illegal-move! start)
+    :noop       (noop!       end)
+    :move-start (move-start! start possible-moves)
+    :move-end   (move-end!   start end)
+    :undo       (undo!)
+    :redo       (redo!)))
 
 (comment
   (new-game!)
-  (update-move! [:1 :c] [:3 :b] p/king)
-  (update-move-start! :2 :a [[:3 :a] [:4 :a]])
-  (update-noop! :3 :f)
+  (move! [:1 :c] [:3 :b] p/king)
+  (move-start! :2 :a [[:3 :a] [:4 :a]])
+  (noop! :3 :f)
 
-
-  (update-kill! (assoc p/rook :color :white))
+  (kill! (assoc p/rook :color :white))
   @state
-
-  (update-in {:dog 0} [:dog] + 6)
-
+  
+  ;; TODO
+  ;; Need to move move-res logic into state
+  ;; Separate check? fn that can always check if any king is in check after each move
+  ;; For checki...
+  ;; WHen a piece gets in check we should add a :check key to the state with the checker and the king in check
+  ;; Then after each move we should check the 'check-res' from the checker to the checkee to see if he's still in check.
+  ;; Moves should be illegal if the check is not broken
+  
   :end-comment)
